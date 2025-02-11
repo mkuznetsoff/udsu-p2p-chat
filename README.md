@@ -2,8 +2,23 @@
 A secure and anonymous P2P messaging app with encryption and cross-platform support 🐍🐍🐍
 ![Демо](src/P2P-чат-P2P-чат.png)
 ![Демо](src/document.jpg)
+```python
+import requests
 
-```json
+url = "https://jsonplaceholder.typicode.com/users/1"
+
+response = requests.get(url)
+print(response.json()) 
+print()
+updated_user = {    
+    "name": "Updated User",
+    "username": "updateduser123",
+}
+
+response = requests.put(url, json=updated_user)
+print(response.json())
+ 
+#WITH THIS CODE WE GOT
 {
   "id": 1,
   "name": "Leanne Graham",
@@ -27,4 +42,3 @@ A secure and anonymous P2P messaging app with encryption and cross-platform supp
     "bs": "harness real-time e-markets"
   }
 }
-```
