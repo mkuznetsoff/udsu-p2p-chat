@@ -27,7 +27,4 @@ A secure and anonymous P2P messaging app with encryption and cross-platform supp
     "bs": "harness real-time e-markets"
   }
 }
-
-
-
-
+```json
