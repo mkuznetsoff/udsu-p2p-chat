@@ -43,7 +43,7 @@ print(response.json())
     "bs": "harness real-time e-markets"
   }
 }
-
+```
 
 # Полезные ресурсы для Python-разработчиков
 
