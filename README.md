@@ -1,7 +1,7 @@
 # udsu-p2p-chat
 A secure and anonymous P2P messaging app with encryption and cross-platform support 🐍🐍🐍
-![Демо](src/P2P-чат-P2P-чат.png)
-![Демо](src/document.jpg)
+![](src/P2P-чат-P2P-чат.png)
+![](src/document.jpg)
 ```python
 #src/request.py
 import requests
