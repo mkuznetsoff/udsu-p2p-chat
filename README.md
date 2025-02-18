@@ -136,10 +136,9 @@ def generate_squares(n):
     """Генерирует список квадратов чисел от 1 до n."""
     return [x**2 for x in range(1, n+1)]
 
-if name == "main":
-    num = int(input("Введите число: "))
-    squares_list = generate_squares(num)
-    print("Квадраты чисел:", squares_list)
+num = int(input("Введите число: "))
+squares_list = generate_squares(num)
+print("Квадраты чисел:", squares_list)
 ```
 
 
