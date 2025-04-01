@@ -59,53 +59,53 @@ def load_keys_from_file(public_key_file="public.pem", private_key_file="private.
       return None, None
 
 
-# --- Main ---
-if __name__ == "__main__":
-    # 1. Генерация пары ключей
-    public_key, private_key = generate_key_pair()
+# # --- Main ---
+# if __name__ == "__main__":
+#     # 1. Генерация пары ключей
+#     public_key, private_key = generate_key_pair()
 
-    # 2. Сохранение ключей в файлы (рекомендуется)
-    save_keys_to_file(public_key, private_key)
+#     # 2. Сохранение ключей в файлы (рекомендуется)
+#     save_keys_to_file(public_key, private_key)
 
-    # 3. Пример загрузки ключей из файлов (для демонстрации)
-    loaded_public_key, loaded_private_key = load_keys_from_file()
+#     # 3. Пример загрузки ключей из файлов (для демонстрации)
+#     loaded_public_key, loaded_private_key = load_keys_from_file()
 
-    if loaded_public_key and loaded_private_key:
-        print("Ключи успешно загружены из файлов.")
-        # Здесь можно использовать загруженные ключи
-        # Например, зашифровать сообщение открытым ключом и расшифровать приватным.
+#     if loaded_public_key and loaded_private_key:
+#         print("Ключи успешно загружены из файлов.")
+#         # Здесь можно использовать загруженные ключи
+#         # Например, зашифровать сообщение открытым ключом и расшифровать приватным.
 
-        message = "савасднемрождения<3".encode('utf-8')  # Сообщение в байтах
+#         message = "савасднемрождения<3".encode('utf-8')  # Сообщение в байтах
 
-        # Шифруем сообщение открытым ключом
-        encrypted_message = rsa.encrypt(message, loaded_public_key)
-        print("Зашифрованное сообщение:", encrypted_message)
+#         # Шифруем сообщение открытым ключом
+#         encrypted_message = rsa.encrypt(message, loaded_public_key)
+#         print("Зашифрованное сообщение:", encrypted_message)
 
-        # Расшифровываем сообщение приватным ключом
-        decrypted_message = rsa.decrypt(encrypted_message, loaded_private_key).decode('utf-8')
-        print("Расшифрованное сообщение:", decrypted_message)
-    else:
-        print("Загрузка ключей не удалась.")
+#         # Расшифровываем сообщение приватным ключом
+#         decrypted_message = rsa.decrypt(encrypted_message, loaded_private_key).decode('utf-8')
+#         print("Расшифрованное сообщение:", decrypted_message)
+#     else:
+#         print("Загрузка ключей не удалась.")
 
 
-# Данные, которые будут закодированы в QR-код
-data = message 
+# # Данные, которые будут закодированы в QR-код
+# data = message 
 
-# Создание QR-кода
-qr = qrcode.QRCode(
-    version=1,  # Версия QR-кода (1-40, None для автоматического определения)
-    error_correction=qrcode.constants.ERROR_CORRECT_L,  # Уровень коррекции ошибок (L, M, Q, H)
-    box_size=10,  # Размер каждого "пикселя" QR-кода
-    border=4,  # Толщина границы вокруг QR-кода
-)
+# # Создание QR-кода
+# qr = qrcode.QRCode(
+#     version=1,  # Версия QR-кода (1-40, None для автоматического определения)
+#     error_correction=qrcode.constants.ERROR_CORRECT_L,  # Уровень коррекции ошибок (L, M, Q, H)
+#     box_size=10,  # Размер каждого "пикселя" QR-кода
+#     border=4,  # Толщина границы вокруг QR-кода
+# )
 
-qr.add_data(data)
-qr.make(fit=True)
+# qr.add_data(data)
+# qr.make(fit=True)
 
-# Создание изображения QR-кода
-img = qr.make_image(fill_color="black", back_color="white")
+# # Создание изображения QR-кода
+# img = qr.make_image(fill_color="black", back_color="white")
 
-# Сохранение изображения в файл
-img.save("example.png")
+# # Сохранение изображения в файл
+# img.save("example.png")
 
-print("QR-код успешно создан и сохранен в файл example.png")
+# print("QR-код успешно создан и сохранен в файл example.png")
