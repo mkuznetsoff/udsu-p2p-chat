@@ -1,67 +1,66 @@
-# клиент
 import socket
 import threading
-import os
-import generate_key as genkey
 import rsa
+import generate_key as genkey
 
 UDP_MAX_SIZE = 65535
+SERVER_HOST = 'smartcontrol.su'
+SERVER_PORT = 3000
 
-# Загрузка или генерация ключей
-public_key, private_key = genkey.load_keys_from_file()
-if not public_key or not private_key:
-    public_key, private_key = genkey.generate_key_pair()
-    genkey.save_keys_to_file(public_key, private_key)
+class P2PClient:
+    def __init__(self, on_receive_callback):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(('', 0))  # автоматический выбор порта
 
-def listen(s: socket.socket, contacts: dict):
-    while True:
-        msg, addr = s.recvfrom(UDP_MAX_SIZE)
-        try:
-            decrypted_msg = rsa.decrypt(msg, private_key).decode('utf-8')
-            print(f'\r\rMessage from {addr}: {decrypted_msg}\n' + f'you: ', end='')
-        except:
+        self.contacts = {}  # (ip, port) -> public_key
+        self.on_receive = on_receive_callback
+
+        # Загрузка или генерация ключей
+        self.public_key, self.private_key = genkey.load_keys_from_file()
+        if not self.public_key or not self.private_key:
+            self.public_key, self.private_key = genkey.generate_key_pair()
+            genkey.save_keys_to_file(self.public_key, self.private_key)
+
+        # Отправляем свой публичный ключ на сервер
+        self.sock.sendto(self.public_key.save_pkcs1('PEM'), (SERVER_HOST, SERVER_PORT))
+
+    def start(self):
+        threading.Thread(target=self.listen, daemon=True).start()
+        self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+
+    def listen(self):
+        while True:
+            msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
             try:
-                contacts[addr] = rsa.PublicKey.load_pkcs1(msg)
-                print(f'\r\rReceived public key from {addr}\n' + f'you: ', end='')
+                decrypted_msg = rsa.decrypt(msg, self.private_key).decode('utf-8')
+                self.on_receive(f"{addr[0]}:{addr[1]} → {decrypted_msg}")
             except:
-                print('\r\r[Ошибка расшифровки]\n' + f'you: ', end='')
+                try:
+                    pubkey = rsa.PublicKey.load_pkcs1(msg)
+                    self.contacts[addr] = pubkey
+                    self.on_receive(f"[+] Получен публичный ключ от {addr[0]}:{addr[1]}")
+                except:
+                    self.on_receive("[!] Ошибка расшифровки или чтения ключа")
 
-def connect(host: str = 'smartcontrol.su', port: int = 3000):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.sendto(public_key.save_pkcs1('PEM'), (host, port))
-    
-    contacts = {}
-    threading.Thread(target=listen, args=(s, contacts), daemon=True).start()
-    
-    # Запрашиваем список участников
-    s.sendto(b'__request_keys', (host, port))
-    
-    while True:
-        recipient = input("Enter recipient address (IP:PORT) or 'all': ")
-        msg = input(f'you: ')
-        
-        if recipient == 'all':
-            if not contacts:
-                print("[Ошибка] Нет доступных контактов для отправки.")
-                continue
-            for addr in contacts:
-                encrypted_msg = rsa.encrypt(msg.encode('utf-8'), contacts[addr])
-                s.sendto(encrypted_msg, addr)
-        elif ':' in recipient:
+    def send_to_all(self, text: str):
+        if not self.contacts:
+            self.on_receive("[!] Нет получателей.")
+            return
+        for addr, pubkey in self.contacts.items():
             try:
-                ip, port = recipient.split(':')
-                addr = (ip, int(port))
-                if addr in contacts:
-                    encrypted_msg = rsa.encrypt(msg.encode('utf-8'), contacts[addr])
-                    s.sendto(encrypted_msg, addr)
-                else:
-                    print("[Ошибка] Указанный получатель не в контактах.")
-            except ValueError:
-                print("[Ошибка] Неверный формат адреса. Введите IP:PORT.")
-        else:
-            print("[Ошибка] Неверный формат ввода. Введите IP:PORT или 'all'.")
+                encrypted_msg = rsa.encrypt(text.encode('utf-8'), pubkey)
+                self.sock.sendto(encrypted_msg, addr)
+            except Exception as e:
+                self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
 
-if __name__ == '__main__':
-    os.system('clear')
-    print('Welcome to encrypted chat!')
-    connect()
+    def send_to(self, ip: str, port: int, text: str):
+        addr = (ip, port)
+        if addr not in self.contacts:
+            self.on_receive(f"[!] Контакт {ip}:{port} не найден")
+            return
+        try:
+            pubkey = self.contacts[addr]
+            encrypted_msg = rsa.encrypt(text.encode('utf-8'), pubkey)
+            self.sock.sendto(encrypted_msg, addr)
+        except Exception as e:
+            self.on_receive(f"[Ошибка отправки {ip}:{port}]: {e}")
