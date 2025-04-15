@@ -1,4 +1,3 @@
-# клиент
 import socket
 import threading
 import os
@@ -13,7 +12,9 @@ if not public_key or not private_key:
     public_key, private_key = genkey.generate_key_pair()
     genkey.save_keys_to_file(public_key, private_key)
 
-def listen(s: socket.socket, contacts: dict):
+contacts = {}  # addr -> public_key
+
+def listen(s: socket.socket):
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
         try:
@@ -21,31 +22,34 @@ def listen(s: socket.socket, contacts: dict):
             print(f'\r\rMessage from {addr}: {decrypted_msg}\n' + f'you: ', end='')
         except:
             try:
-                contacts[addr] = rsa.PublicKey.load_pkcs1(msg)
+                key = rsa.PublicKey.load_pkcs1(msg)
+                contacts[addr] = key
                 print(f'\r\rReceived public key from {addr}\n' + f'you: ', end='')
             except:
-                print('\r\r[Ошибка расшифровки]\n' + f'you: ', end='')
+                print('\r\r[Ошибка расшифровки или неверный формат ключа]\n' + f'you: ', end='')
 
-def connect(host: str = '127.0.0.1', port: int = 3000):
+def connect(host: str = 'smartcontrol.su', port: int = 3000):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(('', 0))  # автоматический выбор локального порта
+
+    # Отправляем свой публичный ключ на сервер
     s.sendto(public_key.save_pkcs1('PEM'), (host, port))
-    
-    contacts = {}
-    threading.Thread(target=listen, args=(s, contacts), daemon=True).start()
-    
-    # Запрашиваем список участников
+
+    threading.Thread(target=listen, args=(s,), daemon=True).start()
+
+    # Запрашиваем ключи и IP других участников
     s.sendto(b'__request_keys', (host, port))
-    
+
     while True:
         recipient = input("Enter recipient address (IP:PORT) or 'all': ")
         msg = input(f'you: ')
-        
+
         if recipient == 'all':
             if not contacts:
                 print("[Ошибка] Нет доступных контактов для отправки.")
                 continue
-            for addr in contacts:
-                encrypted_msg = rsa.encrypt(msg.encode('utf-8'), contacts[addr])
+            for addr, pubkey in contacts.items():
+                encrypted_msg = rsa.encrypt(msg.encode('utf-8'), pubkey)
                 s.sendto(encrypted_msg, addr)
         elif ':' in recipient:
             try:
@@ -63,5 +67,5 @@ def connect(host: str = '127.0.0.1', port: int = 3000):
 
 if __name__ == '__main__':
     os.system('clear')
-    print('Welcome to encrypted chat!')
+    print('Welcome to encrypted P2P chat!')
     connect()
