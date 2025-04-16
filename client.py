@@ -1,5 +1,7 @@
+# client.py
 import socket
 import threading
+import json
 import rsa
 import generate_key as genkey
 
@@ -21,26 +23,35 @@ class P2PClient:
             self.public_key, self.private_key = genkey.generate_key_pair()
             genkey.save_keys_to_file(self.public_key, self.private_key)
 
-        # Отправляем свой публичный ключ на сервер
-        self.sock.sendto(self.public_key.save_pkcs1('PEM'), (SERVER_HOST, SERVER_PORT))
+        # Регистрация на сервере
+        self.sock.sendto(b'__register__' + self.public_key.save_pkcs1('PEM'), (SERVER_HOST, SERVER_PORT))
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
-        self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+        self.request_peers()
+
+    def request_peers(self):
+        self.sock.sendto(b'__request_peers__', (SERVER_HOST, SERVER_PORT))
+        msg, _ = self.sock.recvfrom(UDP_MAX_SIZE)
+        peers_info = json.loads(msg.decode())
+        for peer in peers_info:
+            ip = peer['ip']
+            port = peer['port']
+            key = rsa.PublicKey.load_pkcs1(peer['key'].encode())
+            self.contacts[(ip, port)] = key
+            # Отправляем пустое сообщение для открытия NAT
+            self.sock.sendto(b'ping', (ip, port))
 
     def listen(self):
         while True:
             msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
+            if msg == b'ping':
+                continue  # Игнорируем ping-сообщения
             try:
                 decrypted_msg = rsa.decrypt(msg, self.private_key).decode('utf-8')
                 self.on_receive(f"{addr[0]}:{addr[1]} → {decrypted_msg}")
             except:
-                try:
-                    pubkey = rsa.PublicKey.load_pkcs1(msg)
-                    self.contacts[addr] = pubkey
-                    self.on_receive(f"[+] Получен публичный ключ от {addr[0]}:{addr[1]}")
-                except:
-                    self.on_receive("[!] Ошибка расшифровки или чтения ключа")
+                self.on_receive("[!] Ошибка расшифровки сообщения")
 
     def send_to_all(self, text: str):
         if not self.contacts:
@@ -52,15 +63,3 @@ class P2PClient:
                 self.sock.sendto(encrypted_msg, addr)
             except Exception as e:
                 self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
-
-    def send_to(self, ip: str, port: int, text: str):
-        addr = (ip, port)
-        if addr not in self.contacts:
-            self.on_receive(f"[!] Контакт {ip}:{port} не найден")
-            return
-        try:
-            pubkey = self.contacts[addr]
-            encrypted_msg = rsa.encrypt(text.encode('utf-8'), pubkey)
-            self.sock.sendto(encrypted_msg, addr)
-        except Exception as e:
-            self.on_receive(f"[Ошибка отправки {ip}:{port}]: {e}")

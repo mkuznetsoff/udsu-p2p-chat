@@ -1,41 +1,22 @@
+# server.py
 import socket
+import json
 
 UDP_MAX_SIZE = 65535
+members = {}  # addr -> public_key
 
-def listen(host: str = '0.0.0.0', port: int = 3000):
+def listen(host='0.0.0.0', port=3000):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind((host, port))
     print(f'Listening at {host}:{port}')
 
-    members = {}
-    
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
 
-        if addr not in members:
-            try:
-                members[addr] = msg
-                print(f'Client {addr} joined and sent public key')
-                # Рассылаем новый ключ всем участникам
-                for member in members:
-                    if member != addr:
-                        s.sendto(msg, member)
-                continue
-            except:
-                continue
-        
-        if msg == b'__request_keys':
-            # Отправляем запрошенные ключи
-            for member, key in members.items():
-                if member != addr:
-                    s.sendto(key, addr)
-            continue
-        
-        print(f'Relaying encrypted message from {addr}')
-        for member in members:
-            if member == addr:
-                continue
-            s.sendto(msg, member)
-
-if __name__ == '__main__':
-    listen()
+        if msg.startswith(b'__register__'):
+            public_key = msg[len(b'__register__'):]
+            members[addr] = public_key
+            print(f'Registered {addr}')
+        elif msg == b'__request_peers__':
+            peers_info = [{'ip': ip, 'port': port, 'key': members[(ip, port)].decode()} for (ip, port) in members if (ip, port) != addr]
+            s.sendto(json.dumps(peers_info).encode(), addr)
