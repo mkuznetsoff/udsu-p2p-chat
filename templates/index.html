@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Чаты</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h2>Добро пожаловать, {{ username }}!</h2>
+
+  <ul>
+    <ul>
+        <li><a href="/chat/1">Чат с 1</a></li>
+        <li><a href="/chat/2">Чат с 2</a></li>
+      </ul>
+      
+  </ul>
+
+  <button onclick="location.href='/settings'">Настройки</button>
+</body>
+</html>

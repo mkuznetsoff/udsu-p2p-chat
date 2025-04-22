@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Чат</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h2>Чат с пользователем</h2>
+  <button onclick="history.back()">← Назад</button>
+
+  <div id="messages">
+    {% for msg in messages %}
+      <p>{{ msg }}</p>
+    {% endfor %}
+  </div>
+
+  <form method="POST" action="/send">
+    <textarea name="message" rows="3"></textarea>
+    <button type="submit">Отправить</button>
+  </form>
+  <script>
+    window.onload = function() {
+      const messageField = document.querySelector('textarea[name="message"]');
+      if (messageField) {
+        messageField.value = '';
+      }
+    };
+  </script>
+  
+</body>
+</html>
