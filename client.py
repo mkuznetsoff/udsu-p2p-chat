@@ -49,9 +49,19 @@ class P2PClient:
     def list_contacts(self):
         return [f"{ip}:{port}" for (ip, port) in self.contacts]
 
+    def send_to_all(self, text: str):
+        for addr, pubkey in self.contacts.items():
+            if pubkey is not None:
+                try:
+                    encrypted_msg = rsa.encrypt(text.encode('utf-8'), pubkey)
+                    self.sock.sendto(encrypted_msg, addr)
+                except Exception as e:
+                    self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
+
     def send_to(self, ip: str, port: int, text: str):
         addr = (ip, port)
         if addr not in self.contacts or self.contacts[addr] is None:
+            self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
             self.on_receive(f"[!] Ключ для {ip}:{port} ещё не получен")
             return
         try:
