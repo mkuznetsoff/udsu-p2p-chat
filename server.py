@@ -1,4 +1,3 @@
-
 import socket
 
 UDP_MAX_SIZE = 65535
@@ -13,9 +12,8 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
 
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
-        msg = msg.decode('utf-8')
 
-        if msg == '__join':
+        if msg.decode('utf-8') == '__join':
             if addr not in members and len(members) < MAX_CLIENTS:
                 members.add(addr)
                 print(f'[+] Client {addr} joined.')
@@ -24,16 +22,6 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                     if member != addr:
                         s.sendto(f"__peer {addr[0]} {addr[1]}".encode(), member)
                         s.sendto(f"__peer {member[0]} {member[1]}".encode(), addr)
-            continue
-
-        if addr not in members:
-            print(f'[!] {addr} пытался отправить сообщение, но не зарегистрирован.')
-            continue
-
-        print(f'[*] Relaying message from {addr}')
-        for member in members:
-            if member != addr:
-                s.sendto(msg.encode(), member)
 
 if __name__ == '__main__':
     listen()
