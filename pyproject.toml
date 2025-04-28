@@ -1,0 +1,10 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1.0",
+    "qrcode>=8.1",
+    "rsa>=4.9.1",
+]
