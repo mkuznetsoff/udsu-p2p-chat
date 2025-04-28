@@ -1,3 +1,4 @@
+
 import socket
 
 UDP_MAX_SIZE = 65535
@@ -8,36 +9,31 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
     s.bind((host, port))
     print(f'Listening at {host}:{port}')
 
-    members = {}
+    members = set()
 
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
+        msg = msg.decode('utf-8')
 
-        if msg == b'__request_keys':
-            for member, key in members.items():
-                if member != addr:
-                    s.sendto(f"__peer {member[0]} {member[1]}".encode(), addr)
-                    s.sendto(key, addr)
-            continue
-
-        if addr not in members and len(members) < MAX_CLIENTS:
-            members[addr] = msg
-            print(f'[+] Client {addr} joined.')
-            # Уведомляем всех о новом участнике
-            for member in members:
-                if member != addr:
-                    s.sendto(f"__peer {addr[0]} {addr[1]}".encode(), member)
-                    s.sendto(msg, member)
+        if msg == '__join':
+            if addr not in members and len(members) < MAX_CLIENTS:
+                members.add(addr)
+                print(f'[+] Client {addr} joined.')
+                # Уведомляем всех о новом участнике
+                for member in members:
+                    if member != addr:
+                        s.sendto(f"__peer {addr[0]} {addr[1]}".encode(), member)
+                        s.sendto(f"__peer {member[0]} {member[1]}".encode(), addr)
             continue
 
         if addr not in members:
-            print(f'[!] {addr} пытался подключиться, но достигнут лимит клиентов.')
+            print(f'[!] {addr} пытался отправить сообщение, но не зарегистрирован.')
             continue
 
         print(f'[*] Relaying message from {addr}')
         for member in members:
             if member != addr:
-                s.sendto(msg, member)
+                s.sendto(msg.encode(), member)
 
 if __name__ == '__main__':
     listen()

@@ -1,7 +1,5 @@
 import socket
 import threading
-import rsa
-import generate_key as genkey
 
 UDP_MAX_SIZE = 65535
 SERVER_HOST = '0.0.0.0'
@@ -11,38 +9,28 @@ class P2PClient:
     def __init__(self, on_receive_callback):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
-
-        self.contacts = {}  # (ip, port) -> rsa.PublicKey
+        self.contacts = set()  # Просто храним адреса без ключей
         self.on_receive = on_receive_callback
-
-        self.public_key, self.private_key = genkey.load_keys_from_file()
-        if not self.public_key or not self.private_key:
-            self.public_key, self.private_key = genkey.generate_key_pair()
-            genkey.save_keys_to_file(self.public_key, self.private_key)
-
-        self.sock.sendto(self.public_key.save_pkcs1('PEM'), (SERVER_HOST, SERVER_PORT))
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
-        self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+        # Регистрируемся на сервере
+        self.sock.sendto(b'__join', (SERVER_HOST, SERVER_PORT))
 
     def listen(self):
         while True:
-            msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
             try:
-                if msg.startswith(b'__peer'):
-                    _, ip, port = msg.decode().split()
-                    self.contacts[(ip, int(port))] = None  # ключ будет позже
-                    self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
-                    continue
+                msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
+                msg = msg.decode('utf-8')
 
-                try:
-                    pubkey = rsa.PublicKey.load_pkcs1(msg)
-                    self.contacts[addr] = pubkey
-                    self.on_receive(f"[+] Получен публичный ключ от {addr[0]}:{addr[1]}")
-                except:
-                    decrypted_msg = rsa.decrypt(msg, self.private_key).decode('utf-8')
-                    self.on_receive(f"{addr[0]}:{addr[1]} → {decrypted_msg}")
+                if msg.startswith('__peer'):
+                    # Получаем информацию о новом пире
+                    _, ip, port = msg.split()
+                    self.contacts.add((ip, int(port)))
+                    self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
+                else:
+                    # Обычное сообщение
+                    self.on_receive(f"{addr[0]}:{addr[1]} → {msg}")
             except Exception as e:
                 self.on_receive(f"[!] Ошибка при получении: {e}")
 
@@ -50,25 +38,22 @@ class P2PClient:
         return [f"{ip}:{port}" for (ip, port) in self.contacts]
 
     def send_to_all(self, text: str):
-        for addr, pubkey in self.contacts.items():
-            if pubkey is not None:
-                try:
-                    encrypted_msg = rsa.encrypt(text.encode('utf-8'), pubkey)
-                    self.sock.sendto(encrypted_msg, addr)
-                except Exception as e:
-                    self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
+        for addr in self.contacts:
+            try:
+                self.sock.sendto(text.encode('utf-8'), addr)
+            except Exception as e:
+                self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
 
     def send_to(self, ip: str, port: int, text: str):
         addr = (ip, port)
-        if addr not in self.contacts or self.contacts[addr] is None:
-            self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
-            self.on_receive(f"[!] Ключ для {ip}:{port} ещё не получен")
+        if addr not in self.contacts:
+            self.on_receive(f"[!] Клиент {ip}:{port} не найден в списке контактов.")
             return
         try:
-            encrypted_msg = rsa.encrypt(text.encode('utf-8'), self.contacts[addr])
-            self.sock.sendto(encrypted_msg, addr)
+            self.sock.sendto(text.encode('utf-8'), addr)
         except Exception as e:
             self.on_receive(f"[Ошибка отправки {ip}:{port}]: {e}")
+
 
 if __name__ == '__main__':
     import time
