@@ -29,11 +29,17 @@ class P2PClient:
                 msg = msg.decode('utf-8')
 
                 if msg.startswith('__peer'):
-                    # Получаем информацию о новом пире и его ключ
-                    _, ip, port, key = msg.split('__')
-                    peer_key = deserialize_key(key)
-                    self.contacts[(ip, int(port))] = peer_key
-                    self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
+                    try:
+                        parts = msg.split('__')
+                        if len(parts) >= 4:
+                            _, ip, port, key = parts[0:4]
+                            peer_key = deserialize_key(key)
+                            self.contacts[(ip, int(port))] = peer_key
+                            self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
+                        else:
+                            self.on_receive("[!] Неверный формат сообщения о пире")
+                    except Exception as e:
+                        self.on_receive(f"[!] Ошибка обработки информации о пире: {e}")
                 elif msg.startswith('__msg__'):
                     # Расшифровываем сообщение
                     encrypted = msg[6:]
