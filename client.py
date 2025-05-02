@@ -86,11 +86,16 @@ class P2PClient:
 if __name__ == '__main__':
     messages = []
 
-    def handle_msg(msg):
-        messages.append(msg)
+    def print_messages():
         clear_screen()
         for message in messages[-10:]:  # Показываем последние 10 сообщений
             print(message)
+        print("\n" + "─" * 50)  # Разделительная линия
+        print(f"{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
+
+    def handle_msg(msg):
+        messages.append(msg)
+        print_messages()
 
     client = P2PClient(on_receive_callback=handle_msg)
     client.start()
@@ -167,10 +172,7 @@ if __name__ == '__main__':
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
-                clear_screen()
-                for message in messages[-10:]:
-                    print(message)
-                print(f"\n{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
+                print_messages()
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
