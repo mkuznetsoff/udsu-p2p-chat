@@ -6,7 +6,7 @@ import os
 import time
 from colorama import init, Fore, Back, Style
 
-init(autoreset=True)  # Инициализация colorama
+init(autoreset=True)
 
 UDP_MAX_SIZE = 65535
 SERVER_HOST = '0.0.0.0'
@@ -21,11 +21,9 @@ def print_header():
     print(f"{Fore.CYAN}║        P2P Защищенный Чат           ║{Style.RESET_ALL}")
     print(f"{Fore.CYAN}╚══════════════════════════════════════╝{Style.RESET_ALL}\n")
 
-def print_menu():
+def print_contact_menu():
     print(f"\n{Fore.YELLOW}Команды:{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}/list{Style.RESET_ALL} - список контактов")
-    print(f"{Fore.GREEN}/change{Style.RESET_ALL} - сменить контакт")
-    print(f"{Fore.GREEN}/clear{Style.RESET_ALL} - очистить экран")
+    print(f"{Fore.GREEN}/list{Style.RESET_ALL} - обновить список контактов")
     print(f"{Fore.GREEN}/exit{Style.RESET_ALL} - выход")
     print(f"{Fore.YELLOW}─────────────────────────────────────{Style.RESET_ALL}\n")
 
@@ -33,7 +31,7 @@ class P2PClient:
     def __init__(self, on_receive_callback):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
-        self.contacts = {}  # {(ip, port): public_key}
+        self.contacts = {}
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
 
@@ -64,14 +62,6 @@ class P2PClient:
     def list_contacts(self):
         return [f"{ip}:{port}" for (ip, port) in self.contacts.keys()]
 
-    def send_to_all(self, text: str):
-        for addr, pub_key in self.contacts.items():
-            try:
-                encrypted = self.crypto.encrypt(text, pub_key)
-                self.sock.sendto(encrypted.encode('utf-8'), addr)
-            except Exception as e:
-                self.on_receive(f"{Fore.RED}[Ошибка отправки {addr[0]}:{addr[1]}]: {e}{Style.RESET_ALL}")
-
     def send_to(self, ip: str, port: int, text: str):
         addr = (ip, port)
         if addr not in self.contacts:
@@ -88,17 +78,27 @@ if __name__ == '__main__':
 
     def print_messages():
         clear_screen()
-        for message in messages[-10:]:  # Показываем последние 10 сообщений
+        for message in messages[-10:]:
             print(message)
-        print("\n" + "─" * 50)  # Разделительная линия
-        print(f"{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
+        print("\n" + "─" * 50)
 
     def handle_msg(msg):
         messages.append(msg)
         print_messages()
+        print(f"{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
 
     client = P2PClient(on_receive_callback=handle_msg)
     client.start()
+
+    def print_contacts():
+        print(f"\n{Fore.CYAN}Доступные клиенты:{Style.RESET_ALL}")
+        contacts = client.list_contacts()
+        if not contacts:
+            print(f"{Fore.YELLOW}Нет доступных клиентов{Style.RESET_ALL}")
+        else:
+            for i, contact in enumerate(contacts):
+                print(f"{Fore.GREEN}[{i}]{Style.RESET_ALL} {contact}")
+        print()
 
     def wait_for_contacts(timeout=5):
         print(f"{Fore.YELLOW}Поиск других участников...{Style.RESET_ALL}")
@@ -110,16 +110,25 @@ if __name__ == '__main__':
         return False
 
     def choose_contact():
+        print_header()
+        print_contact_menu()
+        print_contacts()
         contacts = client.list_contacts()
         if not contacts:
-            print(f"{Fore.RED}[!] Нет доступных клиентов.{Style.RESET_ALL}")
             return None
-        print(f"\n{Fore.CYAN}Список доступных клиентов:{Style.RESET_ALL}")
-        for i, contact in enumerate(contacts):
-            print(f"{Fore.GREEN}[{i}]{Style.RESET_ALL} {contact}")
         while True:
             try:
-                index = int(input(f"{Fore.YELLOW}Выберите номер контакта: {Style.RESET_ALL}"))
+                choice = input(f"{Fore.YELLOW}Выберите номер контакта или команду: {Style.RESET_ALL}").strip()
+                if choice == "/list":
+                    client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+                    time.sleep(1)
+                    print_header()
+                    print_contact_menu()
+                    print_contacts()
+                    continue
+                elif choice == "/exit":
+                    return None
+                index = int(choice)
                 return contacts[index]
             except (ValueError, IndexError):
                 print(f"{Fore.RED}[!] Неверный выбор. Попробуйте снова.{Style.RESET_ALL}")
@@ -143,8 +152,7 @@ if __name__ == '__main__':
     port = int(port)
 
     print_header()
-    print(f"{Fore.GREEN}Готово. Введите сообщение для отправки.{Style.RESET_ALL}")
-    print_menu()
+    print(f"{Fore.GREEN}Чат с {current_contact}{Style.RESET_ALL}")
 
     while True:
         try:
@@ -152,30 +160,10 @@ if __name__ == '__main__':
             if msg == "/exit":
                 print(f"{Fore.YELLOW}Выход...{Style.RESET_ALL}")
                 break
-            elif msg == "/clear":
-                messages.clear()
-                print_header()
-                print_menu()
-            elif msg == "/list":
-                print(f"\n{Fore.YELLOW}Обновление списка клиентов...{Style.RESET_ALL}")
-                client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
-                time.sleep(1)
-                print(f"{Fore.CYAN}Доступные клиенты:{Style.RESET_ALL}")
-                for contact in client.list_contacts():
-                    print(f"{Fore.GREEN}- {contact}{Style.RESET_ALL}")
-            elif msg == "/change":
-                new_contact = choose_contact()
-                if new_contact:
-                    ip, port = new_contact.split(':')
-                    port = int(port)
-                    print(f"{Fore.GREEN}[i] Переключено на {new_contact}{Style.RESET_ALL}")
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
-                clear_screen()
-                for message in messages[-10:]:  # Показываем последние 10 сообщений
-                    print(message)
-                print("\n" + "─" * 50)  # Разделительная линия
+                print_messages()
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
