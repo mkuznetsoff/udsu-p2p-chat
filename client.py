@@ -31,8 +31,8 @@ class P2PClient:
                 if msg.startswith('__peer'):
                     try:
                         parts = msg.split('__')
-                        if len(parts) >= 4:
-                            _, ip, port, key = parts[0:4]
+                        if len(parts) >= 5:
+                            _, ip, port, _, key = parts[0:5]  # Добавляем пропуск метки 'key'
                             peer_key = deserialize_key(key)
                             self.contacts[(ip, int(port))] = peer_key
                             self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")

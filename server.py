@@ -20,14 +20,16 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                 client_key = msg[7:]
                 members[addr] = client_key
                 print(f'[+] Client {addr} joined.')
-                
+
                 # Уведомляем всех о новом участнике
                 for member, key in members.items():
                     if member != addr:
-                        # Отправляем новому клиенту информацию о существующих
-                        s.sendto(f"__peer__{member[0]}__{member[1]}__{key}".encode(), addr)
+                        # Добавляем дополнительное разделение для ключа
+                        peer_msg = f"__peer__{member[0]}__{member[1]}__key__{key}"
+                        s.sendto(peer_msg.encode(), addr)
                         # Отправляем существующим клиентам информацию о новом
-                        s.sendto(f"__peer__{addr[0]}__{addr[1]}__{client_key}".encode(), member)
+                        new_peer_msg = f"__peer__{addr[0]}__{addr[1]}__key__{client_key}"
+                        s.sendto(new_peer_msg.encode(), member)
 
 if __name__ == '__main__':
     listen()
