@@ -106,9 +106,17 @@ if __name__ == '__main__':
         while True:
             try:
                 index = int(input("Выберите номер контакта: "))
-                return contacts[index]
+                contact = contacts[index]
+                try:
+                    ip, port_str = contact.split(':')
+                    port = int(port_str)
+                    return (ip, port)
+                except ValueError as e:
+                    print(f"[!] Неверный формат адреса: {e}")
+                    return None
             except (ValueError, IndexError):
                 print("[!] Неверный выбор. Попробуйте снова.")
+                return None
 
     # Ожидание доступных клиентов
     while not wait_for_contacts():
@@ -118,13 +126,12 @@ if __name__ == '__main__':
             print("Выход.")
             exit()
 
-    current_contact = choose_contact()
-    if not current_contact:
+    contact_info = choose_contact()
+    if not contact_info:
         print("[!] Контакт не выбран. Выход.")
         exit()
 
-    ip, port = current_contact.split(':')
-    port = int(port)
+    ip, port = contact_info
 
     print("\nГотово. Введите сообщение для отправки.")
     print("Команды: /list - список, /change - сменить контакт, /exit - выйти")
