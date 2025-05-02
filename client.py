@@ -32,10 +32,14 @@ class P2PClient:
                     try:
                         parts = msg.split('__')
                         if len(parts) >= 5:
-                            _, ip, port, _, key = parts[0:5]  # Добавляем пропуск метки 'key'
-                            peer_key = deserialize_key(key)
-                            self.contacts[(ip, int(port))] = peer_key
-                            self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
+                            _, ip, port_str, _, key = parts[0:5]  # Добавляем пропуск метки 'key'
+                            try:
+                                port = int(port_str)
+                                peer_key = deserialize_key(key)
+                                self.contacts[(ip, port)] = peer_key
+                                self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
+                            except ValueError as e:
+                                self.on_receive(f"[!] Ошибка обработки порта: {e}")
                         else:
                             self.on_receive("[!] Неверный формат сообщения о пире")
                     except Exception as e:
