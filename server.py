@@ -24,12 +24,12 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                 # Уведомляем всех о новом участнике
                 for member, key in members.items():
                     if member != addr:
-                        # Добавляем дополнительное разделение для ключа
+                        # Используем двойное подчеркивание как разделитель
                         peer_msg = f"__peer__{member[0]}__{member[1]}__key__{key}"
-                        s.sendto(peer_msg.encode(), addr)
+                        s.sendto(peer_msg.encode('utf-8'), addr)
                         # Отправляем существующим клиентам информацию о новом
                         new_peer_msg = f"__peer__{addr[0]}__{addr[1]}__key__{client_key}"
-                        s.sendto(new_peer_msg.encode(), member)
+                        s.sendto(new_peer_msg.encode('utf-8'), member)
 
 if __name__ == '__main__':
     listen()

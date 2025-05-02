@@ -73,7 +73,15 @@ class P2PClient:
             self.on_receive(f"[!] Клиент {ip}:{port} не найден в списке контактов.")
             return
         try:
-            self.sock.sendto(text.encode('utf-8'), addr)
+            # Получаем публичный ключ получателя
+            pub_key = self.contacts[addr]
+            # Шифруем сообщение
+            encrypted = encrypt_message(text, pub_key)
+            if encrypted:
+                message = f"__msg__{encrypted}"
+                self.sock.sendto(message.encode('utf-8'), addr)
+            else:
+                self.on_receive("[!] Ошибка шифрования сообщения")
         except Exception as e:
             self.on_receive(f"[Ошибка отправки {ip}:{port}]: {e}")
 
