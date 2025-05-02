@@ -188,12 +188,14 @@ name = "repl-nix-workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "colorama" },
     { name = "cryptography" },
     { name = "flask" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "colorama", specifier = ">=0.4.6" },
     { name = "cryptography", specifier = ">=44.0.2" },
     { name = "flask", specifier = ">=3.1.0" },
 ]
