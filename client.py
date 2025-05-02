@@ -84,8 +84,7 @@ if __name__ == '__main__':
 
     def handle_msg(msg):
         messages.append(msg)
-        print_messages()
-        print(f"{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
+        print_chat_interface()
 
     client = P2PClient(on_receive_callback=handle_msg)
     client.start()
@@ -160,21 +159,36 @@ if __name__ == '__main__':
     print_header()
     print(f"{Fore.GREEN}Чат с {current_contact}{Style.RESET_ALL}")
 
-    while True:
-        try:
-            clear_screen()
+    def print_chat_interface():
+        clear_screen()
+        print(f"{Fore.GREEN}Чат с {current_contact}{Style.RESET_ALL}\n")
+        print("─" * 50)  # Верхняя разделительная линия
+        
+        # Вывод последних сообщений
+        if messages:
             for message in messages[-10:]:
                 print(message)
-            print("\n" + "─" * 50)  # Разделительная линия
-            msg = input(f"{Fore.CYAN}> {Style.RESET_ALL}").strip()
+        else:
+            print(f"{Fore.YELLOW}Нет сообщений{Style.RESET_ALL}")
+        
+        print("\n" + "─" * 50)  # Нижняя разделительная линия
+        print(f"{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
+
+    while True:
+        try:
+            print_chat_interface()
+            msg = input().strip()
+            
             if msg == "/exit":
                 print(f"{Fore.YELLOW}Выход...{Style.RESET_ALL}")
                 break
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
+                
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
         except Exception as e:
             print(f"{Fore.RED}[!] Ошибка: {e}{Style.RESET_ALL}")
+            time.sleep(2)  # Пауза, чтобы пользователь увидел ошибку
