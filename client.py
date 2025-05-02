@@ -91,6 +91,9 @@ if __name__ == '__main__':
     client.start()
 
     def print_contacts():
+        clear_screen()
+        print_header()
+        print_contact_menu()
         print(f"\n{Fore.CYAN}Доступные клиенты:{Style.RESET_ALL}")
         contacts = client.list_contacts()
         if not contacts:
@@ -99,38 +102,41 @@ if __name__ == '__main__':
             for i, contact in enumerate(contacts):
                 print(f"{Fore.GREEN}[{i}]{Style.RESET_ALL} {contact}")
         print()
+        return contacts
 
     def wait_for_contacts(timeout=5):
         print(f"{Fore.YELLOW}Поиск других участников...{Style.RESET_ALL}")
         for i in range(timeout):
             client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
             time.sleep(1)
-            if client.list_contacts():
+            contacts = print_contacts()
+            if contacts:
                 return True
         return False
 
     def choose_contact():
-        print_header()
-        print_contact_menu()
-        print_contacts()
-        contacts = client.list_contacts()
-        if not contacts:
-            return None
+        contacts = None
         while True:
-            try:
+            contacts = print_contacts()
+            if not contacts:
+                choice = input(f"{Fore.YELLOW}Нет доступных клиентов. /list для обновления, /exit для выхода: {Style.RESET_ALL}").strip()
+            else:
                 choice = input(f"{Fore.YELLOW}Выберите номер контакта или команду: {Style.RESET_ALL}").strip()
-                if choice == "/list":
-                    client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
-                    time.sleep(1)
-                    print_header()
-                    print_contact_menu()
-                    print_contacts()
-                    continue
-                elif choice == "/exit":
-                    return None
+            
+            if choice == "/list":
+                client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+                time.sleep(1)
+                continue
+            elif choice == "/exit":
+                return None
+            
+            try:
                 index = int(choice)
-                return contacts[index]
-            except (ValueError, IndexError):
+                if contacts and 0 <= index < len(contacts):
+                    return contacts[index]
+                else:
+                    print(f"{Fore.RED}[!] Неверный номер контакта.{Style.RESET_ALL}")
+            except ValueError:
                 print(f"{Fore.RED}[!] Неверный выбор. Попробуйте снова.{Style.RESET_ALL}")
 
     print_header()
@@ -156,6 +162,10 @@ if __name__ == '__main__':
 
     while True:
         try:
+            clear_screen()
+            for message in messages[-10:]:
+                print(message)
+            print("\n" + "─" * 50)  # Разделительная линия
             msg = input(f"{Fore.CYAN}> {Style.RESET_ALL}").strip()
             if msg == "/exit":
                 print(f"{Fore.YELLOW}Выход...{Style.RESET_ALL}")
@@ -163,7 +173,6 @@ if __name__ == '__main__':
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
-                print_messages()
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
