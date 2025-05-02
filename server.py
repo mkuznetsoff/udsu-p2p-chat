@@ -8,20 +8,26 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
     s.bind((host, port))
     print(f'Listening at {host}:{port}')
 
-    members = set()
+    members = {}  # Храним адреса и публичные ключи
 
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
+        msg = msg.decode('utf-8')
 
-        if msg.decode('utf-8') == '__join':
+        if msg.startswith('__join__'):
             if addr not in members and len(members) < MAX_CLIENTS:
-                members.add(addr)
+                # Сохраняем публичный ключ клиента
+                client_key = msg[7:]
+                members[addr] = client_key
                 print(f'[+] Client {addr} joined.')
+                
                 # Уведомляем всех о новом участнике
-                for member in members:
+                for member, key in members.items():
                     if member != addr:
-                        s.sendto(f"__peer {addr[0]} {addr[1]}".encode(), member)
-                        s.sendto(f"__peer {member[0]} {member[1]}".encode(), addr)
+                        # Отправляем новому клиенту информацию о существующих
+                        s.sendto(f"__peer__{member[0]}__{member[1]}__{key}".encode(), addr)
+                        # Отправляем существующим клиентам информацию о новом
+                        s.sendto(f"__peer__{addr[0]}__{addr[1]}__{client_key}".encode(), member)
 
 if __name__ == '__main__':
     listen()

@@ -5,17 +5,22 @@ UDP_MAX_SIZE = 65535
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 3000
 
+from crypto_utils import generate_keys, serialize_key, deserialize_key, encrypt_message, decrypt_message
+
 class P2PClient:
     def __init__(self, on_receive_callback):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
-        self.contacts = set()  # Просто храним адреса без ключей
+        self.contacts = {}  # Храним адреса и публичные ключи
         self.on_receive = on_receive_callback
+        # Генерируем ключи при создании клиента
+        self.public_key, self.private_key = generate_keys()
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
-        # Регистрируемся на сервере
-        self.sock.sendto(b'__join', (SERVER_HOST, SERVER_PORT))
+        # Регистрируемся на сервере с публичным ключом
+        join_msg = f"__join__{serialize_key(self.public_key)}"
+        self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
 
     def listen(self):
         while True:
@@ -24,13 +29,19 @@ class P2PClient:
                 msg = msg.decode('utf-8')
 
                 if msg.startswith('__peer'):
-                    # Получаем информацию о новом пире
-                    _, ip, port = msg.split()
-                    self.contacts.add((ip, int(port)))
+                    # Получаем информацию о новом пире и его ключ
+                    _, ip, port, key = msg.split('__')
+                    peer_key = deserialize_key(key)
+                    self.contacts[(ip, int(port))] = peer_key
                     self.on_receive(f"[+] Обнаружен клиент {ip}:{port}")
-                else:
-                    # Обычное сообщение
-                    self.on_receive(f"{addr[0]}:{addr[1]} → {msg}")
+                elif msg.startswith('__msg__'):
+                    # Расшифровываем сообщение
+                    encrypted = msg[6:]
+                    decrypted = decrypt_message(encrypted, self.private_key)
+                    if decrypted:
+                        self.on_receive(f"{addr[0]}:{addr[1]} → {decrypted}")
+                    else:
+                        self.on_receive(f"[!] Ошибка расшифровки сообщения от {addr[0]}:{addr[1]}")
             except Exception as e:
                 self.on_receive(f"[!] Ошибка при получении: {e}")
 
@@ -38,9 +49,11 @@ class P2PClient:
         return [f"{ip}:{port}" for (ip, port) in self.contacts]
 
     def send_to_all(self, text: str):
-        for addr in self.contacts:
+        for addr, pub_key in self.contacts.items():
             try:
-                self.sock.sendto(text.encode('utf-8'), addr)
+                encrypted = encrypt_message(text, pub_key)
+                message = f"__msg__{encrypted}"
+                self.sock.sendto(message.encode('utf-8'), addr)
             except Exception as e:
                 self.on_receive(f"[Ошибка отправки {addr[0]}:{addr[1]}]: {e}")
 
