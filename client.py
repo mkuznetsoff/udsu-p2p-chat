@@ -91,6 +91,7 @@ if __name__ == '__main__':
         clear_screen()
         for message in messages[-10:]:  # Показываем последние 10 сообщений
             print(message)
+        print(f"\n{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
 
     client = P2PClient(on_receive_callback=handle_msg)
     client.start()
@@ -170,6 +171,7 @@ if __name__ == '__main__':
                 clear_screen()
                 for message in messages[-10:]:
                     print(message)
+                print(f"\n{Fore.CYAN}> {Style.RESET_ALL}", end='', flush=True)
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
