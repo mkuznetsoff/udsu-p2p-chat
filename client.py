@@ -172,7 +172,10 @@ if __name__ == '__main__':
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
-                print_messages()
+                clear_screen()
+                for message in messages[-10:]:  # Показываем последние 10 сообщений
+                    print(message)
+                print("\n" + "─" * 50)  # Разделительная линия
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Выход...{Style.RESET_ALL}")
             break
