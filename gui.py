@@ -1,51 +1,149 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton,
-    QTextEdit, QListWidget, QLabel
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QTextEdit,
+    QLineEdit, QPushButton, QListWidget, QHBoxLayout, QMessageBox, QLabel
 )
 from PyQt5.QtCore import Qt
-from client import P2PClient
+from PyQt5.QtGui import QFont, QColor, QPalette
+from client import P2PClient  # Подключи свой класс клиента
 
-
-class ChatWindow(QWidget):
+class ChatWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("P2P Шифрованный Чат")
-        self.setGeometry(300, 200, 500, 600)
+        self.setWindowTitle("P2P Чат — Telegram Style")
+        self.setGeometry(100, 100, 800, 550)
 
-        # UI
-        self.chat_view = QListWidget()
-        self.message_input = QTextEdit()
-        self.message_input.setPlaceholderText("Введите сообщение...")
-
-        self.send_button = QPushButton("Отправить всем")
-        self.send_button.clicked.connect(self.send_message)
-
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Чат:"))
-        layout.addWidget(self.chat_view)
-        layout.addWidget(self.message_input)
-        layout.addWidget(self.send_button)
-        self.setLayout(layout)
-
-        # Клиент
-        self.client = P2PClient(self.append_message)
+        self.client = P2PClient(on_receive_callback=self.display_message)
         self.client.start()
+        self.current_contact = None
 
-    def append_message(self, msg: str):
-        self.chat_view.addItem(msg)
-        self.chat_view.scrollToBottom()
+        self.setStyleSheet(self.load_stylesheet())
+
+        # Основной виджет и компоненты
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
+        self.chat_display = QTextEdit()
+        self.chat_display.setReadOnly(True)
+        self.chat_display.setObjectName("chatDisplay")
+
+        self.message_input = QLineEdit()
+        self.message_input.setPlaceholderText("Напишите сообщение...")
+        self.message_input.returnPressed.connect(self.send_message)
+        self.message_input.setObjectName("messageInput")
+
+        self.send_button = QPushButton("➤")
+        self.send_button.clicked.connect(self.send_message)
+        self.send_button.setFixedWidth(40)
+        self.send_button.setObjectName("sendButton")
+
+        self.contact_list = QListWidget()
+        self.contact_list.setMaximumWidth(220)
+        self.contact_list.setObjectName("contactList")
+        self.contact_list.itemClicked.connect(self.select_contact)
+
+        self.update_contacts_button = QPushButton("⟳")
+        self.update_contacts_button.clicked.connect(self.update_contacts)
+        self.update_contacts_button.setObjectName("updateButton")
+
+        # Лейауты
+        message_layout = QHBoxLayout()
+        message_layout.addWidget(self.message_input)
+        message_layout.addWidget(self.send_button)
+
+        chat_layout = QVBoxLayout()
+        chat_layout.addWidget(self.chat_display)
+        chat_layout.addLayout(message_layout)
+
+        contacts_layout = QVBoxLayout()
+        contacts_layout.addWidget(QLabel("Контакты"))
+        contacts_layout.addWidget(self.update_contacts_button)
+        contacts_layout.addWidget(self.contact_list)
+
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(contacts_layout)
+        main_layout.addLayout(chat_layout)
+
+        self.central_widget.setLayout(main_layout)
+
+    def update_contacts(self):
+        self.contact_list.clear()
+        contacts = self.client.list_contacts()
+        if not contacts:
+            QMessageBox.information(self, "Контакты", "Нет доступных клиентов.")
+        else:
+            for contact in contacts:
+                self.contact_list.addItem(contact)
+
+    def select_contact(self, item):
+        self.current_contact = item.text()
+        self.display_message(f"[i] Вы выбрали: {self.current_contact}")
+
+    def display_message(self, message):
+        self.chat_display.append(message)
 
     def send_message(self):
-        text = self.message_input.toPlainText().strip()
-        if text:
-            self.append_message(f"Вы → всем: {text}")
-            self.client.send_to_all(text)
-            self.message_input.clear()
+        text = self.message_input.text().strip()
+        if not text or not self.current_contact:
+            return
+        ip, port = self.current_contact.split(':')
+        self.client.send_to(ip, int(port), text)
+        self.display_message(f"<b>Вы:</b> {text}")
+        self.message_input.clear()
 
+    def load_stylesheet(self):
+        return """
+        QWidget {
+            background-color: #f8f8f8;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 14px;
+        }
+        QTextEdit#chatDisplay {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        QLineEdit#messageInput {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 8px;
+        }
+        QPushButton#sendButton {
+            background-color: #0088cc;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        QPushButton#sendButton:hover {
+            background-color: #007ab8;
+        }
+        QPushButton#updateButton {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 6px;
+            font-size: 16px;
+        }
+        QListWidget#contactList {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        QListWidget::item:selected {
+            background-color: #d0efff;
+        }
+        QLabel {
+            font-weight: bold;
+            padding-bottom: 5px;
+        }
+        """
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     window = ChatWindow()
     window.show()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()

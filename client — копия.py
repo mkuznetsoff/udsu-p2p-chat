@@ -10,6 +10,7 @@ init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
 SERVER_HOST = '127.0.0.1'
+
 SERVER_PORT = 3000
 
 def clear_screen():
@@ -18,7 +19,7 @@ def clear_screen():
 def print_header():
     clear_screen()
     print(f"{Fore.CYAN}╔══════════════════════════════════════╗{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}║        P2P Защищенный Чат            ║{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}║        P2P Защищенный Чат           ║{Style.RESET_ALL}")
     print(f"{Fore.CYAN}╚══════════════════════════════════════╝{Style.RESET_ALL}\n")
 
 def print_menu():
