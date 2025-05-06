@@ -52,7 +52,7 @@ class P2PClient:
                 if msg.startswith('__peer'):
                     _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
                     self.contacts[(ip, int(port))] = (pub_key, nickname)
-                    self.on_receive(f"{Fore.GREEN}[+] Обнаружен клиент {nickname} ({ip}:{port}){Style.RESET_ALL}")
+                    self.on_receive(f"[+] Обнаружен клиент {nickname}")
                 else:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)

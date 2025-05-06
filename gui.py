@@ -81,14 +81,14 @@ class ChatWindow(QMainWindow):
             for contact in contacts:
                 ip, port = contact.split(':')
                 nickname = self.client.get_nickname((ip, int(port)))
-                item = f"{nickname} ({contact})"
-                self.contact_list.addItem(item)
+                self.contact_list.addItem(nickname)
+                self.nicknames[nickname] = contact
 
 
     def select_contact(self, item):
-        text = item.text()
-        self.current_contact = text.split('(')[1].rstrip(')')
-        self.display_message(f"[i] Вы выбрали: {self.current_contact}")
+        nickname = item.text()
+        self.current_contact = self.nicknames[nickname]
+        self.display_message(f"[i] Вы выбрали: {nickname}")
 
     def display_message(self, message):
         self.chat_display.append(message)
