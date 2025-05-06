@@ -73,6 +73,8 @@ class ChatWindow(QMainWindow):
         main_layout.addLayout(chat_layout)
 
         self.central_widget.setLayout(main_layout)
+        self.closeEvent = self.handle_close
+
 
     def update_contacts(self):
         self.contact_list.clear()
@@ -104,12 +106,20 @@ class ChatWindow(QMainWindow):
         self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
-    def get_nickname(self,
-                     addr):  # Placeholder - needs actual nickname resolution
+    def get_nickname(self, addr):
         if addr in self.nicknames:
             return self.nicknames[addr]
         else:
             return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
+
+    def handle_close(self, event):
+        """Обработка закрытия окна"""
+        try:
+            if self.client:
+                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+        except:
+            pass
+        event.accept()
 
     def load_stylesheet(self):
         return """
