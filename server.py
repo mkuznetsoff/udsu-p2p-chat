@@ -7,7 +7,8 @@ MAX_CLIENTS = 10
 def listen(host: str = '0.0.0.0', port: int = 3000):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind((host, port))
-    print(f'Listening at {host}:{port}')
+    print(f'[SERVER] Listening at {host}:{port}')
+    print('[SERVER] Waiting for clients...')
 
     members = {}  # {addr: (public_key, nickname)}
 
