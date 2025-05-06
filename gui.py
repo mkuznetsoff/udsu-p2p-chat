@@ -1,7 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QTextEdit,
-    QLineEdit, QPushButton, QListWidget, QHBoxLayout, QMessageBox, QLabel
+    QLineEdit, QPushButton, QListWidget, QHBoxLayout, QMessageBox, QLabel,
+    QInputDialog
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QPalette
@@ -13,7 +14,11 @@ class ChatWindow(QMainWindow):
         self.setWindowTitle("P2P Чат — Telegram Style")
         self.setGeometry(100, 100, 800, 550)
 
-        self.client = P2PClient(on_receive_callback=self.display_message)
+        nickname, ok = QInputDialog.getText(self, 'Ввод ника', 'Введите ваш ник:')
+        if not ok or not nickname:
+            sys.exit()
+            
+        self.client = P2PClient(on_receive_callback=self.display_message, nickname=nickname)
         self.client.start()
         self.current_contact = None
 
