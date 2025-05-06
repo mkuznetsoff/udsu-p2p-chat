@@ -62,8 +62,13 @@ class P2PClient:
             except Exception as e:
                 self.on_receive(f"{Fore.RED}[!] Ошибка при получении: {e}{Style.RESET_ALL}")
 
-    def list_contacts(self):
-        return [f"{ip}:{port}" for (ip, port) in self.contacts.keys()]
+    def list_contacts(self, with_ip=True):
+        if with_ip:
+            return [f"{ip}:{port}" for (ip, port) in self.contacts.keys()]
+        return [self.contacts[addr][1] for addr in self.contacts.keys()]
+
+    def get_nickname(self, addr):
+        return self.contacts[addr][1] if addr in self.contacts else f"{addr[0]}:{addr[1]}"
 
     def send_to_all(self, text: str):
         for addr, pub_key in self.contacts.items():

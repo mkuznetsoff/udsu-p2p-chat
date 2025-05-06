@@ -17,10 +17,11 @@ class ChatWindow(QMainWindow):
         nickname, ok = QInputDialog.getText(self, 'Ввод ника', 'Введите ваш ник:')
         if not ok or not nickname:
             sys.exit()
-            
+
         self.client = P2PClient(on_receive_callback=self.display_message, nickname=nickname)
         self.client.start()
         self.current_contact = None
+        self.nicknames = {} # Dictionary to store nicknames
 
         self.setStyleSheet(self.load_stylesheet())
 
@@ -78,7 +79,9 @@ class ChatWindow(QMainWindow):
             QMessageBox.information(self, "Контакты", "Нет доступных клиентов.")
         else:
             for contact in contacts:
-                self.contact_list.addItem(contact)
+                ip, port = contact.split(':')
+                self.contact_list.addItem(contact) # Display IP:port in the list
+
 
     def select_contact(self, item):
         self.current_contact = item.text()
@@ -91,10 +94,16 @@ class ChatWindow(QMainWindow):
         text = self.message_input.text().strip()
         if not text or not self.current_contact:
             return
-        ip, port = self.current_contact.split(':')
-        self.client.send_to(ip, int(port), text)
+        self.client.send_to(self.current_contact, text) # Send to IP:port
         self.display_message(f"<b>Вы:</b> {text}")
         self.message_input.clear()
+
+    def get_nickname(self, addr): # Placeholder - needs actual nickname resolution
+        if addr in self.nicknames:
+            return self.nicknames[addr]
+        else:
+            return f"{addr[0]}:{addr[1]}" # Fallback to IP:port if nickname not found
+
 
     def load_stylesheet(self):
         return """
