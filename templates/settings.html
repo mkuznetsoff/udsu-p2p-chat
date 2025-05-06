@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -16,16 +15,6 @@
   <label>Сервер:
     <input type="text" placeholder="Адрес сервера" />
   </label><br>
-
-  <div class="history-controls">
-    <h3>Управление историей</h3>
-    <p>Путь к файлу истории: <code id="history-path">{{ history_path }}</code></p>
-    <button onclick="location.href='/export_history'">Экспорт истории</button>
-    <form action="/import_history" method="post" enctype="multipart/form-data">
-      <input type="file" name="history_file" accept=".enc">
-      <button type="submit">Импорт истории</button>
-    </form>
-  </div>
 
   <button onclick="history.back()">← Назад</button>
 </body>

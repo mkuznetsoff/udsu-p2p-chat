@@ -47,13 +47,8 @@ class P2PClient:
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
+        self.crypto = CryptoManager()
         self.nickname = nickname
-        self.crypto = CryptoManager(nickname)
-        self.chat_history = self.crypto.load_chat_history()
-        # Display chat history
-        if self.chat_history:
-            for msg in self.chat_history:
-                self.on_receive(msg)
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
@@ -74,10 +69,7 @@ class P2PClient:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
-                        message = f"<b>{nickname} → {decrypted_msg}</b>"
-                        self.chat_history.append(message)
-                        self.crypto.save_chat_history(self.chat_history)
-                        self.on_receive(message)
+                        self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"
@@ -118,9 +110,6 @@ class P2PClient:
                 0]  # Get just the public key from the tuple
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
-            message = f"<b>Вы → {text}</b>"
-            self.chat_history.append(message)
-            self.crypto.save_chat_history(self.chat_history)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
@@ -236,12 +225,10 @@ if __name__ == '__main__':
                     )
             elif msg:
                 client.send_to(ip, port, msg)
-                formatted_msg = f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}"
-                messages.append(formatted_msg)
-                client.chat_history.append(formatted_msg)
-                client.crypto.save_chat_history(client.chat_history)
+                messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
                 clear_screen()
-                for message in messages[-10:]:  # Показываем последние 10 сообщений
+                for message in messages[
+                        -10:]:  # Показываем последние 10 сообщений
                     print(message)
                 print("\n" + "─" * 50)  # Разделительная линия
         except KeyboardInterrupt:
