@@ -3,7 +3,10 @@ import threading
 from crypto import CryptoManager
 import os
 import time
+import json
 from colorama import init, Fore, Back, Style
+import hashlib
+import base64
 
 init(autoreset=True)  # Инициализация colorama
 
@@ -35,9 +38,45 @@ def print_menu():
     print(f"{Fore.GREEN}/change{Style.RESET_ALL} - сменить контакт")
     print(f"{Fore.GREEN}/clear{Style.RESET_ALL} - очистить экран")
     print(f"{Fore.GREEN}/exit{Style.RESET_ALL} - выход")
+    print(f"{Fore.GREEN}/export {Style.RESET_ALL}- экспорт истории")
+    print(f"{Fore.GREEN}/import {Style.RESET_ALL}- импорт истории")
     print(
         f"{Fore.YELLOW}─────────────────────────────────────{Style.RESET_ALL}\n"
     )
+
+
+class HistoryManager:
+    def __init__(self, nickname, crypto_manager):
+        self.nickname = nickname
+        self.crypto = crypto_manager
+        self.history_dir = os.path.join(os.path.expanduser("~"), "p2p_chat_history")
+        os.makedirs(self.history_dir, exist_ok=True)
+
+    def get_history_filepath(self, peer_nickname):
+        filename = hashlib.sha256(f"{self.nickname}_{peer_nickname}".encode()).hexdigest() + ".json"
+        return os.path.join(self.history_dir, filename)
+
+    def save_message(self, peer_nickname, message, outgoing):
+        filepath = self.get_history_filepath(peer_nickname)
+        try:
+            with open(filepath, 'r+') as f:
+                history = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            history = []
+        encrypted_message = self.crypto.encrypt(message)
+        history.append({"message": base64.b64encode(encrypted_message.encode()).decode(), "outgoing": outgoing})
+        with open(filepath, 'w') as f:
+            json.dump(history, f, indent=4)
+
+    def load_history(self, peer_nickname):
+        filepath = self.get_history_filepath(peer_nickname)
+        try:
+            with open(filepath, 'r') as f:
+                history = json.load(f)
+                return [self.crypto.decrypt(base64.b64decode(msg["message"])) for msg in history]
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
+
 
 
 class P2PClient:
@@ -49,6 +88,7 @@ class P2PClient:
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
         self.nickname = nickname
+        self.history_manager = HistoryManager(nickname, self.crypto)
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
@@ -70,6 +110,7 @@ class P2PClient:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
                         self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
+                        self.history_manager.save_message(nickname, decrypted_msg, False)
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"
@@ -106,10 +147,11 @@ class P2PClient:
             )
             return
         try:
-            pub_key = self.contacts[addr][
-                0]  # Get just the public key from the tuple
+            pub_key = self.contacts[addr][0]
+            peer_nickname = self.contacts[addr][1]
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
+            self.history_manager.save_message(peer_nickname, text, True)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
@@ -223,6 +265,17 @@ if __name__ == '__main__':
                     print(
                         f"{Fore.GREEN}[i] Переключено на {new_contact}{Style.RESET_ALL}"
                     )
+            elif msg.startswith("/export"):
+                try:
+                    peer_nickname = msg.split()[1]
+                    history = client.history_manager.load_history(peer_nickname)
+                    print(f"История чата с {peer_nickname}:")
+                    for message in history:
+                        print(message)
+                except IndexError:
+                    print(f"{Fore.RED}[!] Неверный формат команды /export.  Пример: /export Nickname{Style.RESET_ALL}")
+            elif msg.startswith("/import"):
+                print(f"{Fore.RED}[!] Импорт истории пока не реализован.{Style.RESET_ALL}")
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
