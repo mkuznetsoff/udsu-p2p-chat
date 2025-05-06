@@ -49,6 +49,13 @@ class P2PClient:
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
         self.nickname = nickname
+        
+    def __del__(self):
+        try:
+            self.sock.sendto('__exit'.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
+            self.sock.close()
+        except:
+            pass
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
