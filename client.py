@@ -59,9 +59,29 @@ class P2PClient:
             base_dir = os.path.join(os.getenv('APPDATA'), 'P2PChat')
         else:
             base_dir = os.path.join(os.path.expanduser('~'), '.p2pchat')
+        
         if not os.path.exists(base_dir):
             os.makedirs(base_dir)
-        return os.path.join(base_dir, f'chat_history_{self.nickname}.json')
+            
+        history_path = os.path.join(base_dir, f'chat_history_{self.nickname}.json')
+        lock_path = os.path.join(base_dir, f'{self.nickname}.lock')
+        
+        if os.path.exists(lock_path):
+            raise Exception("Этот ник уже используется")
+            
+        with open(lock_path, 'w') as f:
+            f.write('locked')
+            
+        self._lock_path = lock_path  # Store for cleanup
+        return history_path
+        
+    def __del__(self):
+        # Clean up lock file when client is destroyed
+        try:
+            if hasattr(self, '_lock_path') and os.path.exists(self._lock_path):
+                os.remove(self._lock_path)
+        except:
+            pass
 
     def _load_history(self):
         import json
