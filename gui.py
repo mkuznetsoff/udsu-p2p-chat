@@ -13,10 +13,15 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
-        print(f"История сообщений хранится в: {self.client.crypto.history_file}")
 
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
+        if not ok or not nickname:
+            sys.exit()
+            
+        self.client = P2PClient(on_receive_callback=self.display_message,
+                               nickname=nickname)
+        print(f"История сообщений хранится в: {self.client.crypto.history_file}")
 
 class SettingsDialog(QWidget):
     def __init__(self, parent=None):
