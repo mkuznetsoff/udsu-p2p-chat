@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.secret_key = 'chat-secret-key'
 
 chat_messages = []
-client = P2PClient(on_receive_callback=lambda msg: chat_messages.append(msg))
+client = P2PClient(on_receive_callback=lambda msg: chat_messages.append(msg), nickname="Server")
 client.start()
 
 @app.route('/')
