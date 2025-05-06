@@ -3,9 +3,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from base64 import b64encode, b64decode
 
-import json
-import os
-
 class CryptoManager:
     def __init__(self):
         # Генерируем пару ключей RSA
@@ -14,45 +11,6 @@ class CryptoManager:
             key_size=2048
         )
         self.public_key = self.private_key.public_key()
-        self.history_file = "chat_history.enc"
-        self.chat_history = self.load_chat_history()
-
-    def save_message_to_history(self, message):
-        self.chat_history.append(message)
-        try:
-            with open(self.history_file, 'w') as f:
-                json.dump(self.chat_history, f)
-        except Exception as e:
-            print(f"Error saving history: {e}")
-
-    def load_chat_history(self):
-        try:
-            if os.path.exists(self.history_file):
-                with open(self.history_file, 'r') as f:
-                    return json.load(f)
-        except Exception as e:
-            print(f"Error loading history: {e}")
-        return []
-
-    def import_history(self, file_path):
-        try:
-            with open(file_path, 'r') as f:
-                self.chat_history = json.load(f)
-            with open(self.history_file, 'w') as f:
-                json.dump(self.chat_history, f)
-            return True
-        except Exception as e:
-            print(f"Error importing history: {e}")
-            return False
-
-    def export_history(self, file_path):
-        try:
-            with open(file_path, 'w') as f:
-                json.dump(self.chat_history, f)
-            return True
-        except Exception as e:
-            print(f"Error exporting history: {e}")
-            return False
 
     def get_public_key_str(self) -> str:
         # Сериализуем публичный ключ в формат PEM
