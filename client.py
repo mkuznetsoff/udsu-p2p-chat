@@ -69,7 +69,9 @@ class P2PClient:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
-                        self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
+                        message = f"<b>{nickname} → {decrypted_msg}</b>"
+                        self.crypto.save_message_to_history(message)
+                        self.on_receive(message)
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"

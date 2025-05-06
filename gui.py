@@ -1,10 +1,67 @@
 import sys
+import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
-                             QHBoxLayout, QMessageBox, QLabel, QInputDialog)
+                             QHBoxLayout, QMessageBox, QLabel, QInputDialog, QDialog,
+                             QFileDialog, QGridLayout)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QPalette
-from client import P2PClient  # Подключи свой класс клиента
+
+# Placeholder for client.py - Replace with your actual implementation
+class P2PClient:
+    def __init__(self, on_receive_callback, nickname):
+        self.on_receive_callback = on_receive_callback
+        self.nickname = nickname
+        self.crypto = CryptoManager() # Added CryptoManager instance
+        self.contacts = {}
+
+    def start(self):
+        pass # Placeholder for start method
+
+    def send_to(self, ip, port, message):
+        # Placeholder - replace with actual sending logic
+        self.crypto.add_to_history(f"Вы → {message}")
+        self.on_receive_callback(f"Вы → {message}")
+
+    def list_contacts(self):
+        # Placeholder - replace with actual contact listing logic
+        return ['127.0.0.1:8080']
+
+    def get_nickname(self, addr):
+        return self.contacts.get(addr, f"{addr[0]}:{addr[1]}")
+
+
+class CryptoManager:
+    def __init__(self):
+        self.chat_history = []
+        self.encryption_key = "placeholder_key" # Replace with secure key generation
+
+    def add_to_history(self, message):
+        self.chat_history.append(message)
+
+    def import_history(self, file_path):
+        try:
+            with open(file_path, 'r') as f:
+                # Placeholder - Replace with your actual decryption and import logic
+                imported_messages = f.readlines()
+                self.chat_history.extend(imported_messages)
+                return True
+        except FileNotFoundError:
+            return False
+        except Exception as e:
+            print(f"Error importing history: {e}")
+            return False
+
+    def export_history(self, file_path):
+        try:
+            with open(file_path, 'w') as f:
+                # Placeholder - Replace with your actual encryption and export logic
+                f.write('\n'.join(self.chat_history))
+                return True
+        except Exception as e:
+            print(f"Error exporting history: {e}")
+            return False
+
 
 
 class ChatWindow(QMainWindow):
@@ -23,11 +80,10 @@ class ChatWindow(QMainWindow):
                                 nickname=nickname)
         self.client.start()
         self.current_contact = None
-        self.nicknames = {}  # Dictionary to store nicknames
+        self.nicknames = {}
 
         self.setStyleSheet(self.load_stylesheet())
 
-        # Основной виджет и компоненты
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -73,6 +129,10 @@ class ChatWindow(QMainWindow):
         main_layout.addLayout(chat_layout)
 
         self.central_widget.setLayout(main_layout)
+        self.menubar = self.menuBar()
+        settings_menu = self.menubar.addMenu("Настройки")
+        settings_action = settings_menu.addAction("Настройки")
+        settings_action.triggered.connect(self.show_settings)
 
     def update_contacts(self):
         self.contact_list.clear()
@@ -104,12 +164,11 @@ class ChatWindow(QMainWindow):
         self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
-    def get_nickname(self,
-                     addr):  # Placeholder - needs actual nickname resolution
+    def get_nickname(self, addr):
         if addr in self.nicknames:
             return self.nicknames[addr]
         else:
-            return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
+            return f"{addr[0]}:{addr[1]}"
 
     def load_stylesheet(self):
         return """
@@ -158,6 +217,60 @@ class ChatWindow(QMainWindow):
             padding-bottom: 5px;
         }
         """
+
+    def show_settings(self):
+        self.settings_dialog = SettingsDialog(self)
+        self.settings_dialog.show()
+
+
+class SettingsDialog(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("Настройки")
+        self.parent = parent
+
+        layout = QVBoxLayout()
+
+        # History group
+        history_group = QGroupBox("История сообщений")
+        history_layout = QVBoxLayout()
+        import_btn = QPushButton("Импортировать историю")
+        import_btn.clicked.connect(self.import_history)
+        export_btn = QPushButton("Экспортировать историю")
+        export_btn.clicked.connect(self.export_history)
+        history_layout.addWidget(import_btn)
+        history_layout.addWidget(export_btn)
+
+        # Отображение истории
+        history_display = QTextEdit()
+        history_display.setReadOnly(True)
+        history_display.setText("\n".join(self.parent.client.crypto.chat_history))
+        history_layout.addWidget(history_display)
+
+        history_group.setLayout(history_layout)
+        layout.addWidget(history_group)
+        self.setLayout(layout)
+
+    def import_history(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Импорт истории", "", "История чата (*.enc)")
+        if file_path:
+            if self.parent.client.crypto.import_history(file_path):
+                QMessageBox.information(self, "Успех", "История успешно импортирована")
+                self.parent.chat_display.clear()
+                for msg in self.parent.client.crypto.chat_history:
+                    self.parent.chat_display.append(msg)
+            else:
+                QMessageBox.critical(self, "Ошибка", "Не удалось импортировать историю")
+
+    def export_history(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Экспорт истории", "", "История чата (*.enc)")
+        if file_path:
+            if self.parent.client.crypto.export_history(file_path):
+                QMessageBox.information(self, "Успех", "История успешно экспортирована")
+            else:
+                QMessageBox.critical(self, "Ошибка", "Не удалось экспортировать историю")
 
 
 def main():
