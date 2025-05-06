@@ -13,9 +13,64 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
+        print(f"История сообщений хранится в: {self.client.crypto.history_file}")
 
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
+
+class SettingsDialog(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.setWindowTitle("Настройки")
+        self.setGeometry(200, 200, 400, 300)
+        
+        layout = QVBoxLayout()
+        
+        # History section
+        history_group = QWidget()
+        history_layout = QVBoxLayout()
+        
+        path_label = QLabel(f"Путь к файлу истории:\n{parent.client.crypto.history_file}")
+        path_label.setWordWrap(True)
+        
+        export_btn = QPushButton("Экспорт истории")
+        export_btn.clicked.connect(self.export_history)
+        
+        import_btn = QPushButton("Импорт истории")
+        import_btn.clicked.connect(self.import_history)
+        
+        history_layout.addWidget(path_label)
+        history_layout.addWidget(export_btn)
+        history_layout.addWidget(import_btn)
+        history_group.setLayout(history_layout)
+        
+        layout.addWidget(history_group)
+        self.setLayout(layout)
+
+    def export_history(self):
+        from shutil import copy2
+        filename, _ = QFileDialog.getSaveFileName(self, "Экспорт истории", "", "History files (*.enc)")
+        if filename:
+            try:
+                copy2(self.parent.client.crypto.history_file, filename)
+                QMessageBox.information(self, "Успех", "История успешно экспортирована")
+            except Exception as e:
+                QMessageBox.warning(self, "Ошибка", f"Ошибка при экспорте: {str(e)}")
+
+    def import_history(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Импорт истории", "", "History files (*.enc)")
+        if filename:
+            try:
+                copy2(filename, self.parent.client.crypto.history_file)
+                self.parent.client.chat_history = self.parent.client.crypto.load_chat_history()
+                self.parent.chat_display.clear()
+                for msg in self.parent.client.chat_history:
+                    self.parent.display_message(msg)
+                QMessageBox.information(self, "Успех", "История успешно импортирована")
+            except Exception as e:
+                QMessageBox.warning(self, "Ошибка", f"Ошибка при импорте: {str(e)}")
+
         if not ok or not nickname:
             sys.exit()
 
@@ -40,6 +95,12 @@ class ChatWindow(QMainWindow):
         self.message_input.returnPressed.connect(self.send_message)
         self.message_input.setObjectName("messageInput")
 
+        # Settings button
+        self.settings_button = QPushButton("⚙")
+        self.settings_button.clicked.connect(self.show_settings)
+        self.settings_button.setFixedWidth(40)
+        self.settings_button.setObjectName("settingsButton")
+
         self.send_button = QPushButton("➤")
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setFixedWidth(40)
@@ -57,6 +118,7 @@ class ChatWindow(QMainWindow):
         # Лейауты
         message_layout = QHBoxLayout()
         message_layout.addWidget(self.message_input)
+        message_layout.addWidget(self.settings_button)
         message_layout.addWidget(self.send_button)
 
         chat_layout = QVBoxLayout()
@@ -94,6 +156,10 @@ class ChatWindow(QMainWindow):
 
     def display_message(self, message):
         self.chat_display.append(message)
+
+    def show_settings(self):
+        settings = SettingsDialog(self)
+        settings.show()
 
     def send_message(self):
         text = self.message_input.text().strip()
