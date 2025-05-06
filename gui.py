@@ -1,27 +1,29 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QTextEdit,
-    QLineEdit, QPushButton, QListWidget, QHBoxLayout, QMessageBox, QLabel,
-    QInputDialog
-)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QTextEdit, QLineEdit, QPushButton, QListWidget,
+                             QHBoxLayout, QMessageBox, QLabel, QInputDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QPalette
 from client import P2PClient  # Подключи свой класс клиента
 
+
 class ChatWindow(QMainWindow):
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("P2P Чат — Telegram Style")
+        self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
 
-        nickname, ok = QInputDialog.getText(self, 'Ввод ника', 'Введите ваш ник:')
+        nickname, ok = QInputDialog.getText(self, 'Ввод ника',
+                                            'Введите ваш ник:')
         if not ok or not nickname:
             sys.exit()
 
-        self.client = P2PClient(on_receive_callback=self.display_message, nickname=nickname)
+        self.client = P2PClient(on_receive_callback=self.display_message,
+                                nickname=nickname)
         self.client.start()
         self.current_contact = None
-        self.nicknames = {} # Dictionary to store nicknames
+        self.nicknames = {}  # Dictionary to store nicknames
 
         self.setStyleSheet(self.load_stylesheet())
 
@@ -76,14 +78,14 @@ class ChatWindow(QMainWindow):
         self.contact_list.clear()
         contacts = self.client.list_contacts()
         if not contacts:
-            QMessageBox.information(self, "Контакты", "Нет доступных клиентов.")
+            QMessageBox.information(self, "Контакты",
+                                    "Нет доступных клиентов.")
         else:
             for contact in contacts:
                 ip, port = contact.split(':')
                 nickname = self.client.get_nickname((ip, int(port)))
                 self.contact_list.addItem(nickname)
                 self.nicknames[nickname] = contact
-
 
     def select_contact(self, item):
         nickname = item.text()
@@ -102,12 +104,12 @@ class ChatWindow(QMainWindow):
         self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
-    def get_nickname(self, addr): # Placeholder - needs actual nickname resolution
+    def get_nickname(self,
+                     addr):  # Placeholder - needs actual nickname resolution
         if addr in self.nicknames:
             return self.nicknames[addr]
         else:
-            return f"{addr[0]}:{addr[1]}" # Fallback to IP:port if nickname not found
-
+            return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
 
     def load_stylesheet(self):
         return """
@@ -157,11 +159,13 @@ class ChatWindow(QMainWindow):
         }
         """
 
+
 def main():
     app = QApplication(sys.argv)
     window = ChatWindow()
     window.show()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
