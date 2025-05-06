@@ -36,6 +36,10 @@ def get_contacts():
     contacts = client.list_contacts()
     return jsonify(contacts)
 
+@app.route('/messages')
+def get_messages():
+    return jsonify(chat_messages)
+
 @app.route('/send', methods=['POST'])
 def send_message():
     data = request.json

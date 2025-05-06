@@ -24,6 +24,16 @@
     <script>
         let currentContact = null;
 
+        function updateMessages() {
+            fetch('/messages')
+                .then(response => response.json())
+                .then(messages => {
+                    const display = document.getElementById('chatDisplay');
+                    display.innerHTML = messages.join('<br>');
+                    display.scrollTop = display.scrollHeight;
+                });
+        }
+
         function updateContacts() {
             fetch('/contacts')
                 .then(response => response.json())
@@ -77,8 +87,9 @@
         // Initialize
         updateContacts();
         
-        // Update contacts periodically
+        // Update contacts and messages periodically
         setInterval(updateContacts, 10000);
+        setInterval(updateMessages, 1000);
     </script>
 </body>
 </html>
