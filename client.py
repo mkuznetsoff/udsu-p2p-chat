@@ -47,8 +47,9 @@ class P2PClient:
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
-        self.crypto = CryptoManager()
         self.nickname = nickname
+        self.crypto = CryptoManager(nickname)
+        self.chat_history = self.crypto.load_chat_history()
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
@@ -69,7 +70,10 @@ class P2PClient:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
-                        self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
+                        message = f"<b>{nickname} → {decrypted_msg}</b>"
+                        self.chat_history.append(message)
+                        self.crypto.save_chat_history(self.chat_history)
+                        self.on_receive(message)
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"
@@ -110,6 +114,9 @@ class P2PClient:
                 0]  # Get just the public key from the tuple
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
+            message = f"<b>Вы → {text}</b>"
+            self.chat_history.append(message)
+            self.crypto.save_chat_history(self.chat_history)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
