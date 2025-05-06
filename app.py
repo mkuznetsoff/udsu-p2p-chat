@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from client import P2PClient
 
 app = Flask(__name__)
 app.secret_key = 'chat-secret-key'
 
 chat_messages = []
-client = P2PClient(on_receive_callback=lambda msg: chat_messages.append(msg), nickname="Server")
+client = None
 client.start()
 
 @app.route('/')
@@ -14,9 +14,13 @@ def login():
 
 @app.route('/login', methods=["POST"])
 def handle_login():
+    global client
     username = request.form.get("username")
     if username:
         session['username'] = username
+        if not client:
+            client = P2PClient(on_receive_callback=lambda msg: chat_messages.append(msg), nickname=username)
+            client.start()
         return redirect(url_for('index'))
     return redirect(url_for('login'))
 
