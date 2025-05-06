@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
-                             QHBoxLayout, QMessageBox, QLabel, QInputDialog)
+                             QHBoxLayout, QMessageBox, QLabel, QInputDialog, QFileDialog, QGroupBox)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QPalette
 from client import P2PClient  # Подключи свой класс клиента
@@ -73,6 +73,17 @@ class ChatWindow(QMainWindow):
         main_layout.addLayout(chat_layout)
 
         self.central_widget.setLayout(main_layout)
+
+        # Add settings menu
+        settings_action = QAction("Настройки", self)
+        settings_action.triggered.connect(self.show_settings)
+        menubar = self.menuBar()
+        filemenu = menubar.addMenu("Файл")
+        filemenu.addAction(settings_action)
+
+    def show_settings(self):
+        self.settings_dialog = SettingsDialog(self)
+        self.settings_dialog.show()
 
     def update_contacts(self):
         self.contact_list.clear()
@@ -158,6 +169,60 @@ class ChatWindow(QMainWindow):
             padding-bottom: 5px;
         }
         """
+
+
+class SettingsDialog(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.setWindowTitle("Настройки")
+        self.setGeometry(200, 200, 400, 300)
+
+        layout = QVBoxLayout()
+
+        # Группа управления историей
+        history_group = QGroupBox("История сообщений")
+        history_layout = QVBoxLayout()
+
+        # Путь к файлу истории
+        history_path = QLabel(f"Путь к файлу истории: {self.parent.client.crypto.history_file}")
+        history_layout.addWidget(history_path)
+
+        # Кнопки импорта/экспорта
+        export_btn = QPushButton("Экспорт истории")
+        export_btn.clicked.connect(self.export_history)
+        import_btn = QPushButton("Импорт истории")
+        import_btn.clicked.connect(self.import_history)
+
+        history_layout.addWidget(export_btn)
+        history_layout.addWidget(import_btn)
+        history_group.setLayout(history_layout)
+
+        layout.addWidget(history_group)
+        self.setLayout(layout)
+
+    def export_history(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Сохранить историю", "", "История (*.enc)")
+        if file_path:
+            try:
+                import shutil
+                shutil.copy2(self.parent.client.crypto.history_file, file_path)
+                QMessageBox.information(self, "Успех", "История успешно экспортирована")
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", f"Ошибка при экспорте: {str(e)}")
+
+    def import_history(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Загрузить историю", "", "История (*.enc)")
+        if file_path:
+            try:
+                import shutil
+                shutil.copy2(file_path, self.parent.client.crypto.history_file)
+                self.parent.client.chat_history = self.parent.client.crypto.load_chat_history()
+                QMessageBox.information(self, "Успех", "История успешно импортирована")
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", f"Ошибка при импорте: {str(e)}")
 
 
 def main():
