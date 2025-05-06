@@ -30,16 +30,17 @@ def print_menu():
     print(f"{Fore.YELLOW}─────────────────────────────────────{Style.RESET_ALL}\n")
 
 class P2PClient:
-    def __init__(self, on_receive_callback):
+    def __init__(self, on_receive_callback, nickname):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
-        self.contacts = {}  # {(ip, port): public_key}
+        self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
+        self.nickname = nickname
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
-        join_msg = f"__join {self.crypto.get_public_key_str()}"
+        join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
         self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
 
     def listen(self):
@@ -49,9 +50,9 @@ class P2PClient:
                 msg = msg.decode('utf-8')
 
                 if msg.startswith('__peer'):
-                    _, ip, port, pub_key = msg.split(maxsplit=3)
-                    self.contacts[(ip, int(port))] = pub_key
-                    self.on_receive(f"{Fore.GREEN}[+] Обнаружен клиент {ip}:{port}{Style.RESET_ALL}")
+                    _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
+                    self.contacts[(ip, int(port))] = (pub_key, nickname)
+                    self.on_receive(f"{Fore.GREEN}[+] Обнаружен клиент {nickname} ({ip}:{port}){Style.RESET_ALL}")
                 else:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
@@ -85,6 +86,11 @@ class P2PClient:
 
 if __name__ == '__main__':
     messages = []
+    
+    print_header()
+    nickname = input(f"{Fore.YELLOW}Введите ваш ник: {Style.RESET_ALL}")
+    while not nickname or len(nickname) > 20:
+        nickname = input(f"{Fore.RED}Ник должен быть от 1 до 20 символов: {Style.RESET_ALL}")
 
     def print_messages():
         clear_screen()
@@ -97,7 +103,7 @@ if __name__ == '__main__':
         messages.append(msg)
         print_messages()
 
-    client = P2PClient(on_receive_callback=handle_msg)
+    client = P2PClient(on_receive_callback=handle_msg, nickname=nickname)
     client.start()
 
     def wait_for_contacts(timeout=5):

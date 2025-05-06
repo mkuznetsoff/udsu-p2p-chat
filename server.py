@@ -9,7 +9,7 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
     s.bind((host, port))
     print(f'Listening at {host}:{port}')
 
-    members = {}  # {addr: public_key}
+    members = {}  # {addr: (public_key, nickname)}
 
     while True:
         msg, addr = s.recvfrom(UDP_MAX_SIZE)
@@ -17,16 +17,17 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
 
         if msg.startswith('__join'):
             if addr not in members and len(members) < MAX_CLIENTS:
-                _, public_key = msg.split(maxsplit=1)
-                members[addr] = public_key
-                print(f'[+] Client {addr} joined.')
+                _, public_key, nickname = msg.split(maxsplit=2)
+                members[addr] = (public_key, nickname)
+                print(f'[+] Client {nickname} ({addr}) joined.')
                 # Уведомляем всех о новом участнике
                 for member in members:
                     if member != addr:
                         # Отправляем информацию о новом клиенте существующим
-                        s.sendto(f"__peer {addr[0]} {addr[1]} {public_key}".encode(), member)
+                        s.sendto(f"__peer {addr[0]} {addr[1]} {public_key} {nickname}".encode(), member)
                         # Отправляем информацию о существующих клиентах новому
-                        s.sendto(f"__peer {member[0]} {member[1]} {members[member]}".encode(), addr)
+                        mem_key, mem_nick = members[member]
+                        s.sendto(f"__peer {member[0]} {member[1]} {mem_key} {mem_nick}".encode(), addr)
 
 if __name__ == '__main__':
     listen()
