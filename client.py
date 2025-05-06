@@ -79,7 +79,8 @@ class P2PClient:
             self.on_receive(f"{Fore.RED}[!] Клиент {ip}:{port} не найден в списке контактов.{Style.RESET_ALL}")
             return
         try:
-            encrypted = self.crypto.encrypt(text, self.contacts[addr])
+            pub_key = self.contacts[addr][0]  # Get just the public key from the tuple
+            encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
         except Exception as e:
             self.on_receive(f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}")
