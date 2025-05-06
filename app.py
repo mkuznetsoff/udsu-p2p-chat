@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from client import P2PClient
 
 app = Flask(__name__)
@@ -29,7 +29,26 @@ def index():
 
 @app.route('/settings')
 def settings():
-    return render_template("settings.html")
+    history_path = client.crypto.history_file
+    print(f"История сообщений хранится в: {history_path}")
+    return render_template("settings.html", history_path=history_path)
+
+@app.route('/export_history')
+def export_history():
+    history_path = client.crypto.history_file
+    return send_file(history_path, as_attachment=True, download_name='chat_history.enc')
+
+@app.route('/import_history', methods=['POST'])
+def import_history():
+    if 'history_file' not in request.files:
+        return 'Файл не выбран', 400
+    file = request.files['history_file']
+    if file.filename == '':
+        return 'Файл не выбран', 400
+    if file:
+        file.save(client.crypto.history_file)
+        client.chat_history = client.crypto.load_chat_history()
+        return redirect(url_for('settings'))
 
 @app.route('/chat/<chat_id>')
 def chat(chat_id):
