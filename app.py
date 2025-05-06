@@ -6,7 +6,6 @@ app.secret_key = 'chat-secret-key'
 
 chat_messages = []
 client = None
-client.start()
 
 @app.route('/')
 def login():
