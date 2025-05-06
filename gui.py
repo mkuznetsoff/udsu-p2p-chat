@@ -26,8 +26,8 @@ class ChatWindow(QMainWindow):
             self.current_contact = None
             self.nicknames = {}  # Dictionary to store nicknames
             
-            # Setup chat display
-            self.setup_ui()
+            # Initialize UI components
+            self.init_ui()
             
             # Load chat history after UI is set up
             for message in self.client.chat_history:
@@ -41,6 +41,7 @@ class ChatWindow(QMainWindow):
         for message in self.client.chat_history:
             self.chat_display.append(message)
 
+        def init_ui(self):
         self.setStyleSheet(self.load_stylesheet())
 
         # Основной виджет и компоненты

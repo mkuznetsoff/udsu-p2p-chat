@@ -67,10 +67,16 @@ class P2PClient:
         lock_path = os.path.join(base_dir, f'{self.nickname}.lock')
         
         if os.path.exists(lock_path):
-            raise Exception("Этот ник уже используется")
-            
+            try:
+                with open(lock_path, 'r') as f:
+                    pid = f.read().strip()
+                    if pid and os.path.exists(f"/proc/{pid}"):
+                        raise Exception("Этот ник уже используется в другом окне")
+            except:
+                pass
+                
         with open(lock_path, 'w') as f:
-            f.write('locked')
+            f.write(str(os.getpid()))
             
         self._lock_path = lock_path  # Store for cleanup
         return history_path
