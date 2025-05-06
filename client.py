@@ -49,6 +49,33 @@ class P2PClient:
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
         self.nickname = nickname
+        self.history_path = self._get_history_path()
+        self.chat_history = self._load_history()
+
+    def _get_history_path(self):
+        import os
+        import sys
+        if sys.platform == 'win32':
+            base_dir = os.path.join(os.getenv('APPDATA'), 'P2PChat')
+        else:
+            base_dir = os.path.join(os.path.expanduser('~'), '.p2pchat')
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+        return os.path.join(base_dir, f'chat_history_{self.nickname}.json')
+
+    def _load_history(self):
+        import json
+        try:
+            with open(self.history_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
+
+    def _save_history(self, message):
+        import json
+        self.chat_history.append(message)
+        with open(self.history_path, 'w', encoding='utf-8') as f:
+            json.dump(self.chat_history, f, ensure_ascii=False, indent=2)
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
@@ -69,7 +96,9 @@ class P2PClient:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
-                        self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
+                        message = f"<b>{nickname} → {decrypted_msg}</b>"
+                        self._save_history(message)
+                        self.on_receive(message)
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"

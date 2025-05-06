@@ -24,6 +24,10 @@ class ChatWindow(QMainWindow):
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames
+        
+        # Load chat history
+        for message in self.client.chat_history:
+            self.chat_display.append(message)
 
         self.setStyleSheet(self.load_stylesheet())
 
@@ -101,7 +105,9 @@ class ChatWindow(QMainWindow):
             return
         ip, port = self.current_contact.split(':')
         self.client.send_to(ip, int(port), text)
-        self.display_message(f"<b>Вы → {text}</b>")
+        message = f"<b>Вы → {text}</b>"
+        self.client._save_history(message)
+        self.display_message(message)
         self.message_input.clear()
 
     def get_nickname(self,
