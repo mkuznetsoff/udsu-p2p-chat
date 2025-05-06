@@ -31,11 +31,19 @@ def index():
 def settings():
     return render_template("settings.html")
 
-@app.route('/chat/<chat_id>')
-def chat(chat_id):
-    if chat_id not in session.get('opened_chats', []):
-        session.setdefault('opened_chats', []).append(chat_id)
-    return render_template("chat.html", chat_id=chat_id, messages=chat_messages)
+@app.route('/contacts')
+def get_contacts():
+    contacts = client.list_contacts()
+    return jsonify(contacts)
+
+@app.route('/send', methods=['POST'])
+def send_message():
+    data = request.json
+    contact = data['contact']
+    message = data['message']
+    ip, port = contact.split(':')
+    client.send_to(ip, int(port), message)
+    return jsonify({'status': 'success'})
 
 
 @app.route('/send/<chat_id>', methods=["POST"])

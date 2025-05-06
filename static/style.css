@@ -1,67 +1,102 @@
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
     margin: 0;
     padding: 20px;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 14px;
+    background-color: #f8f8f8;
 }
 
-h2 {
-    color: #333;
+.chat-container {
+    display: flex;
+    gap: 20px;
+    height: 80vh;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-form {
-    margin-top: 20px;
+.contacts-panel {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
 }
 
-input[type="text"],
-textarea {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-    box-sizing: border-box;
+.chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-button {
-    padding: 10px 20px;
-    background-color: #008cff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 15px;
-}
-
-button:hover {
-    background-color: #0073cc;
-}
-
-#messages {
-    border: 1px solid #ccc;
-    padding: 10px;
-    height: 300px;
-    overflow-y: auto;
+.chat-display {
+    flex: 1;
     background-color: white;
-    border-radius: 4px;
-    margin-bottom: 15px;
-}
-
-ul {
-    padding-left: 0;
-    list-style: none;
-}
-
-ul li {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: auto;
     margin-bottom: 10px;
 }
 
-a {
-    color: #008cff;
-    text-decoration: none;
+.message-input-container {
+    display: flex;
+    gap: 10px;
 }
 
-a:hover {
-    text-decoration: underline;
+#messageInput {
+    flex: 1;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.send-btn {
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 40px;
+}
+
+.send-btn:hover {
+    background-color: #007ab8;
+}
+
+.update-btn {
+    background-color: #e0e0e0;
+    border: none;
+    padding: 6px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.contact-list {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.contact-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.contact-item:hover {
+    background-color: #f0f0f0;
+}
+
+.contact-item.selected {
+    background-color: #d0efff;
+}
+
+.message {
+    margin-bottom: 8px;
 }

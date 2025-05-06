@@ -1,21 +1,84 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Чаты</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <title>P2P Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h2>Добро пожаловать, {{ username }}!</h2>
+    <div class="chat-container">
+        <div class="contacts-panel">
+            <h2>Контакты</h2>
+            <button class="update-btn" onclick="updateContacts()">⟳</button>
+            <div id="contactList" class="contact-list"></div>
+        </div>
+        <div class="chat-panel">
+            <div id="chatDisplay" class="chat-display"></div>
+            <div class="message-input-container">
+                <input type="text" id="messageInput" placeholder="Напишите сообщение...">
+                <button onclick="sendMessage()" class="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentContact = null;
 
-  <ul>
-    <ul>
-        <li><a href="/chat/1">Чат с 1</a></li>
-        <li><a href="/chat/2">Чат с 2</a></li>
-      </ul>
-      
-  </ul>
+        function updateContacts() {
+            fetch('/contacts')
+                .then(response => response.json())
+                .then(contacts => {
+                    const list = document.getElementById('contactList');
+                    list.innerHTML = '';
+                    contacts.forEach(contact => {
+                        const item = document.createElement('div');
+                        item.className = 'contact-item';
+                        item.textContent = contact;
+                        item.onclick = () => selectContact(contact);
+                        list.appendChild(item);
+                    });
+                });
+        }
 
-  <button onclick="location.href='/settings'">Настройки</button>
+        function selectContact(contact) {
+            currentContact = contact;
+            const message = `[i] Вы выбрали: ${contact}`;
+            appendMessage(message);
+        }
+
+        function appendMessage(message) {
+            const display = document.getElementById('chatDisplay');
+            const msgElement = document.createElement('div');
+            msgElement.className = 'message';
+            msgElement.innerHTML = message;
+            display.appendChild(msgElement);
+            display.scrollTop = display.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentContact) return;
+
+            fetch('/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contact: currentContact,
+                    message: text
+                })
+            }).then(() => {
+                appendMessage(`<b>Вы → ${text}</b>`);
+                input.value = '';
+            });
+        }
+
+        // Initialize
+        updateContacts();
+        
+        // Update contacts periodically
+        setInterval(updateContacts, 10000);
+    </script>
 </body>
 </html>
