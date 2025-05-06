@@ -49,7 +49,7 @@ class P2PClient:
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
         self.nickname = nickname
-        
+
     def __del__(self):
         try:
             self.sock.sendto('__exit'.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
@@ -72,6 +72,12 @@ class P2PClient:
                     _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
                     self.contacts[(ip, int(port))] = (pub_key, nickname)
                     self.on_receive(f"[+] Обнаружен клиент {nickname}")
+                elif msg.startswith('__leave'):
+                    _, ip, port, nickname = msg.split(maxsplit=3)
+                    addr = (ip, int(port))
+                    if addr in self.contacts:
+                        del self.contacts[addr]
+                        self.on_receive(f"[-] Клиент {nickname} покинул чат")
                 else:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)

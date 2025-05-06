@@ -18,6 +18,10 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
         if msg == '__exit':
             if addr in members:
                 nickname = members[addr][1]
+                # Уведомляем всех об уходе клиента
+                for member in members:
+                    if member != addr:
+                        s.sendto(f"__leave {addr[0]} {addr[1]} {nickname}".encode(), member)
                 del members[addr]
                 print(f'[-] Client {nickname} ({addr}) left.')
                 
