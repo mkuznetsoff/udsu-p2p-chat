@@ -80,11 +80,14 @@ class ChatWindow(QMainWindow):
         else:
             for contact in contacts:
                 ip, port = contact.split(':')
-                self.contact_list.addItem(contact) # Display IP:port in the list
+                nickname = self.client.get_nickname((ip, int(port)))
+                item = f"{nickname} ({contact})"
+                self.contact_list.addItem(item)
 
 
     def select_contact(self, item):
-        self.current_contact = item.text()
+        text = item.text()
+        self.current_contact = text.split('(')[1].rstrip(')')
         self.display_message(f"[i] Вы выбрали: {self.current_contact}")
 
     def display_message(self, message):
@@ -94,8 +97,9 @@ class ChatWindow(QMainWindow):
         text = self.message_input.text().strip()
         if not text or not self.current_contact:
             return
-        self.client.send_to(self.current_contact, text) # Send to IP:port
-        self.display_message(f"<b>Вы:</b> {text}")
+        ip, port = self.current_contact.split(':')
+        self.client.send_to(ip, int(port), text)
+        self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
     def get_nickname(self, addr): # Placeholder - needs actual nickname resolution

@@ -56,7 +56,8 @@ class P2PClient:
                 else:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
-                        self.on_receive(f"{Fore.BLUE}{addr[0]}:{addr[1]} → {Style.RESET_ALL}{decrypted_msg}")
+                        nickname = self.get_nickname((addr[0], addr[1]))
+                        self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
                     except Exception as e:
                         self.on_receive(f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}")
             except Exception as e:
