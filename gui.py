@@ -19,29 +19,12 @@ class ChatWindow(QMainWindow):
         if not ok or not nickname:
             sys.exit()
 
-        try:
-            self.client = P2PClient(on_receive_callback=self.display_message,
-                                    nickname=nickname)
-            self.client.start()
-            self.current_contact = None
-            self.nicknames = {}  # Dictionary to store nicknames
-            
-            # Initialize UI components
-            self.init_ui()
-            
-            # Load chat history after UI is set up
-            for message in self.client.chat_history:
-                self.chat_display.append(message)
-                
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ник '{nickname}' уже используется или произошла ошибка: {str(e)}")
-            sys.exit()
-        
-        # Load chat history
-        for message in self.client.chat_history:
-            self.chat_display.append(message)
+        self.client = P2PClient(on_receive_callback=self.display_message,
+                                nickname=nickname)
+        self.client.start()
+        self.current_contact = None
+        self.nicknames = {}  # Dictionary to store nicknames
 
-        def init_ui(self):
         self.setStyleSheet(self.load_stylesheet())
 
         # Основной виджет и компоненты
@@ -118,9 +101,7 @@ class ChatWindow(QMainWindow):
             return
         ip, port = self.current_contact.split(':')
         self.client.send_to(ip, int(port), text)
-        message = f"<b>Вы → {text}</b>"
-        self.client._save_history(message)
-        self.display_message(message)
+        self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
     def get_nickname(self,
