@@ -50,6 +50,10 @@ class P2PClient:
         self.nickname = nickname
         self.crypto = CryptoManager(nickname)
         self.chat_history = self.crypto.load_chat_history()
+        # Display chat history
+        if self.chat_history:
+            for msg in self.chat_history:
+                self.on_receive(msg)
 
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
@@ -232,10 +236,12 @@ if __name__ == '__main__':
                     )
             elif msg:
                 client.send_to(ip, port, msg)
-                messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
+                formatted_msg = f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}"
+                messages.append(formatted_msg)
+                client.chat_history.append(formatted_msg)
+                client.crypto.save_chat_history(client.chat_history)
                 clear_screen()
-                for message in messages[
-                        -10:]:  # Показываем последние 10 сообщений
+                for message in messages[-10:]:  # Показываем последние 10 сообщений
                     print(message)
                 print("\n" + "─" * 50)  # Разделительная линия
         except KeyboardInterrupt:
