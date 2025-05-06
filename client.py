@@ -1,7 +1,5 @@
 import socket
 import threading
-import signal
-import sys
 from crypto import CryptoManager
 import os
 import time
@@ -53,9 +51,6 @@ class P2PClient:
         self.nickname = nickname
         
     def __del__(self):
-        self.cleanup()
-
-    def cleanup(self):
         try:
             self.sock.sendto('__exit'.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
             self.sock.close()
@@ -63,16 +58,9 @@ class P2PClient:
             pass
 
     def start(self):
-        signal.signal(signal.SIGINT, lambda s, f: self.handle_exit())
-        signal.signal(signal.SIGTERM, lambda s, f: self.handle_exit())
         threading.Thread(target=self.listen, daemon=True).start()
         join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
         self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
-        
-    def handle_exit(self):
-        print("\nЗавершение работы...")
-        self.cleanup()
-        sys.exit(0)
 
     def listen(self):
         while True:
