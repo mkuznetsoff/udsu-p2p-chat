@@ -63,10 +63,21 @@ class ChatWindow(QMainWindow):
         chat_layout.addWidget(self.chat_display)
         chat_layout.addLayout(message_layout)
 
+        # Add import/export buttons
+        self.import_button = QPushButton("Импорт истории")
+        self.import_button.clicked.connect(self.import_history)
+        self.import_button.setObjectName("actionButton")
+        
+        self.export_button = QPushButton("Экспорт истории")
+        self.export_button.clicked.connect(self.export_history)
+        self.export_button.setObjectName("actionButton")
+        
         contacts_layout = QVBoxLayout()
         contacts_layout.addWidget(QLabel("Контакты"))
         contacts_layout.addWidget(self.update_contacts_button)
         contacts_layout.addWidget(self.contact_list)
+        contacts_layout.addWidget(self.import_button)
+        contacts_layout.addWidget(self.export_button)
 
         main_layout = QHBoxLayout()
         main_layout.addLayout(contacts_layout)
@@ -104,12 +115,46 @@ class ChatWindow(QMainWindow):
         self.display_message(f"<b>Вы → {text}</b>")
         self.message_input.clear()
 
-    def get_nickname(self,
-                     addr):  # Placeholder - needs actual nickname resolution
+    def get_nickname(self, addr):
         if addr in self.nicknames:
             return self.nicknames[addr]
         else:
-            return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
+            return f"{addr[0]}:{addr[1]}"
+
+    def import_history(self):
+        if not self.current_contact:
+            QMessageBox.warning(self, "Ошибка", "Сначала выберите контакт")
+            return
+            
+        nickname = self.contact_list.currentItem().text()
+        try:
+            history = self.client.history_manager.load_history(nickname)
+            self.chat_display.clear()
+            for entry in history:
+                if entry.get('is_outgoing'):
+                    self.chat_display.append(f"<b>Вы → {entry['message']}</b>")
+                else:
+                    self.chat_display.append(f"<b>{nickname} → {entry['message']}</b>")
+            QMessageBox.information(self, "Успех", "История успешно импортирована")
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка", f"Ошибка при импорте: {str(e)}")
+
+    def export_history(self):
+        if not self.current_contact:
+            QMessageBox.warning(self, "Ошибка", "Сначала выберите контакт")
+            return
+            
+        nickname = self.contact_list.currentItem().text()
+        try:
+            history = self.client.history_manager.load_history(nickname)
+            if not history:
+                QMessageBox.information(self, "Информация", "История чата пуста")
+                return
+                
+            QMessageBox.information(self, "Успех", 
+                f"История сохранена в {self.client.history_manager.history_dir}")
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка", f"Ошибка при экспорте: {str(e)}")
 
     def load_stylesheet(self):
         return """
@@ -144,6 +189,17 @@ class ChatWindow(QMainWindow):
             border: none;
             padding: 6px;
             font-size: 16px;
+        }
+        QPushButton#actionButton {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        QPushButton#actionButton:hover {
+            background-color: #357abd;
         }
         QListWidget#contactList {
             background-color: #ffffff;
