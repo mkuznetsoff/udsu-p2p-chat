@@ -51,19 +51,12 @@ class CryptoManager:
             )
             
         # Всегда создаем public_key из private_key
-        self.public_key = self.private_key.public_key()
-            
-            # Сохраняем ключ если указан nickname
-            if nickname:
-                pem = self.private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                )
-                with open(self.keys_file, 'wb') as f:
-                    f.write(pem)
+        if self.private_key:
+            self.public_key = self.private_key.public_key()
 
     def get_public_key_str(self) -> str:
+        if not self.public_key:
+            raise ValueError("Public key not initialized")
         # Сериализуем публичный ключ в формат PEM
         pem = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
@@ -90,6 +83,8 @@ class CryptoManager:
         return b64encode(encrypted).decode('utf-8')
 
     def decrypt(self, encrypted_message: str) -> str:
+        if not self.private_key:
+            raise ValueError("Private key not initialized")
         # Расшифровываем сообщение своим приватным ключом
         encrypted = b64decode(encrypted_message)
         decrypted = self.private_key.decrypt(
