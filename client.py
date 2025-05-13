@@ -62,13 +62,13 @@ class MessageHistory:
             encrypted_message = {
                 'sender':
                 self.crypto.encrypt(message['sender'],
-                                     self.crypto.get_public_key()),
+                                     self.crypto.get_public_key_str()),
                 'receiver':
                 self.crypto.encrypt(message['receiver'],
-                                     self.crypto.get_public_key()),
+                                     self.crypto.get_public_key_str()),
                 'text':
                 self.crypto.encrypt(message['text'],
-                                     self.crypto.get_public_key())
+                                     self.crypto.get_public_key_str())
             }
             encrypted_messages.append(encrypted_message)
         return encrypted_messages
