@@ -62,6 +62,9 @@ class MessageHistory:
                 return False
                 
             self.messages = data['messages']
+            # Показываем импортированные сообщения
+            for msg in data['messages']:
+                print(f"{msg['sender']} → {msg['recipient']}: {msg['message']}")
             return True
         except Exception as e:
             print(f"Error importing history: {e}")
