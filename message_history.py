@@ -33,7 +33,7 @@ class MessageHistory:
             
             # Шифруем данные
             json_data = json.dumps(data)
-            encrypted_data = self.crypto.encrypt(json_data, self.crypto.get_public_key_str())
+            encrypted_data = self.crypto.encrypt(json_data, data['public_key'])
             
             # Создаем ZIP архив
             with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zf:
