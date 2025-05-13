@@ -136,8 +136,8 @@ class P2PClient:
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
-        self.crypto = CryptoManager()
         self.nickname = nickname
+        self.crypto = CryptoManager(nickname)
         self.history = MessageHistory(self.crypto, self.nickname)
 
     def __del__(self):
@@ -147,8 +147,17 @@ class P2PClient:
         except:
             pass
 
+    def request_contacts_update(self):
+        while True:
+            try:
+                self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+                time.sleep(10)  # Обновляем каждые 10 секунд
+            except:
+                break
+
     def start(self):
         threading.Thread(target=self.listen, daemon=True).start()
+        threading.Thread(target=self.request_contacts_update, daemon=True).start()
         join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
         self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
 

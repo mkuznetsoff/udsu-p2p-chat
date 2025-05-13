@@ -2,15 +2,37 @@
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from base64 import b64encode, b64decode
+import os
 
 class CryptoManager:
-    def __init__(self):
-        # Генерируем пару ключей RSA
-        self.private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
-        )
-        self.public_key = self.private_key.public_key()
+    def __init__(self, nickname=None):
+        self.keys_file = f"keys_{nickname}.pem" if nickname else None
+        
+        if nickname and os.path.exists(self.keys_file):
+            # Загружаем существующий ключ
+            with open(self.keys_file, 'rb') as f:
+                self.private_key = serialization.load_pem_private_key(
+                    f.read(),
+                    password=None
+                )
+                self.public_key = self.private_key.public_key()
+        else:
+            # Генерируем новую пару ключей
+            self.private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048
+            )
+            self.public_key = self.private_key.public_key()
+            
+            # Сохраняем ключ если указан nickname
+            if nickname:
+                pem = self.private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+                with open(self.keys_file, 'wb') as f:
+                    f.write(pem)
 
     def get_public_key_str(self) -> str:
         # Сериализуем публичный ключ в формат PEM
