@@ -152,13 +152,11 @@ class ChatWindow(QMainWindow):
             return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
 
     def export_history(self):
-        filename, _ = QFileDialog.getSaveFileName(self, "Экспорт истории", "", "ZIP Files (*.zip)")
-        if filename:
-            if not filename.endswith('.zip'):
-                filename += '.zip'
+        directory = QFileDialog.getExistingDirectory(self, "Выберите папку для экспорта")
+        if directory:
             # Создаем отдельный поток для экспорта
             self.export_thread = QThread()
-            self.export_worker = ExportWorker(self.client, filename)
+            self.export_worker = ExportWorker(self.client, directory)
             self.export_worker.moveToThread(self.export_thread)
             
             self.export_thread.started.connect(self.export_worker.run)
@@ -191,10 +189,14 @@ class ChatWindow(QMainWindow):
         """Обработка закрытия окна"""
         try:
             if self.client:
+                print("[i] Отключение от сервера...")
                 self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+                # Даем серверу время на обработку
+                time.sleep(0.5)
                 self.client.sock.close()
-        except:
-            pass
+                print("[+] Успешное отключение")
+        except Exception as e:
+            print(f"[-] Ошибка при отключении: {e}")
         event.accept()
 
     def load_stylesheet(self):
