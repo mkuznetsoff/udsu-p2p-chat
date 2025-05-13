@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import json
 import zipfile
@@ -9,7 +8,7 @@ class MessageHistory:
         self.crypto = crypto_manager
         self.nickname = nickname
         self.messages = []
-        
+
     def add_message(self, sender: str, recipient: str, message: str):
         self.messages.append({
             'timestamp': datetime.now().isoformat(),
@@ -23,18 +22,18 @@ class MessageHistory:
             if not self.messages:
                 print("No messages to export")
                 return False
-                
+
             # Сериализуем сообщения
             data = {
                 'nickname': self.nickname,
                 'public_key': self.crypto.get_public_key_str(),
                 'messages': self.messages
             }
-            
+
             # Шифруем данные
             json_data = json.dumps(data)
             encrypted_data = self.crypto.encrypt(json_data, self.crypto.get_public_key_str())
-            
+
             # Создаем ZIP архив
             with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zf:
                 zf.writestr('history.enc', encrypted_data)
@@ -47,20 +46,20 @@ class MessageHistory:
         try:
             with zipfile.ZipFile(filename, 'r') as zf:
                 encrypted_data = zf.read('history.enc').decode('utf-8')
-            
+
             # Расшифровываем данные
             json_data = self.crypto.decrypt(encrypted_data)
             data = json.loads(json_data)
-            
+
             # Проверяем соответствие
             if data['nickname'] != self.nickname:
                 print("Nickname mismatch")
                 return False
-            
+
             if data['public_key'] != self.crypto.get_public_key_str():
                 print("Public key mismatch")
                 return False
-                
+
             self.messages = data['messages']
             # Показываем импортированные сообщения
             for msg in data['messages']:
