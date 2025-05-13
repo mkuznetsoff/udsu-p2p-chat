@@ -21,23 +21,29 @@ class MessageHistory:
         })
 
     def export_history(self, filename: str):
-        if not self.messages:
-            return False
+        try:
+            if not self.messages:
+                print("No messages to export")
+                return False
+                
+            # Сериализуем сообщения
+            data = {
+                'nickname': self.nickname,
+                'public_key': self.crypto.get_public_key_str(),
+                'messages': self.messages
+            }
             
-        # Сериализуем сообщения
-        data = {
-            'nickname': self.nickname,
-            'public_key': self.crypto.get_public_key_str(),
-            'messages': self.messages
-        }
-        
-        # Шифруем данные
-        json_data = json.dumps(data)
-        encrypted_data = self.crypto.encrypt(json_data, self.crypto.get_public_key_str())
-        
-        # Создаем ZIP архив
-        with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr('history.enc', encrypted_data)
+            # Шифруем данные
+            json_data = json.dumps(data)
+            encrypted_data = self.crypto.encrypt(json_data, self.crypto.get_public_key_str())
+            
+            # Создаем ZIP архив
+            with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('history.enc', encrypted_data)
+            return True
+        except Exception as e:
+            print(f"Error exporting history: {e}")
+            return Falseory.enc', encrypted_data)
         return True
 
     def import_history(self, filename: str) -> bool:
