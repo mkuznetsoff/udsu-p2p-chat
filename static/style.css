@@ -10,7 +10,7 @@ body {
 .chat-container {
     display: flex;
     gap: 20px;
-    height: 80vh;
+    height: 85vh;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -59,7 +59,6 @@ body {
     padding: 8px 15px;
     font-weight: bold;
     cursor: pointer;
-    width: 40px;
 }
 
 .send-btn:hover {
@@ -87,6 +86,7 @@ body {
 .contact-item {
     padding: 8px;
     cursor: pointer;
+    border-bottom: 1px solid #eee;
 }
 
 .contact-item:hover {
@@ -99,4 +99,25 @@ body {
 
 .message {
     margin-bottom: 8px;
+    padding: 5px;
+}
+
+.history-buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.history-buttons button {
+    flex: 1;
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.history-buttons button:hover {
+    background-color: #007ab8;
 }

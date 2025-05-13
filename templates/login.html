@@ -1,18 +1,58 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Вход</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <title>P2P Chat - Вход</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f8f8;
+            font-family: "Segoe UI", sans-serif;
+        }
+        .login-container {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #007ab8;
+        }
+    </style>
 </head>
 <body>
-  <h2>Вход</h2>
-
-  <form action="/login" method="POST">
-    <label>Имя пользователя:
-      <input type="text" name="username" required>
-    </label>
-    <button type="submit">Войти</button>
-  </form>
+    <div class="login-container">
+        <h1>P2P Chat</h1>
+        <form method="POST" action="/login">
+            <input type="text" name="username" placeholder="Введите ваш ник" required>
+            <button type="submit">Войти</button>
+        </form>
+    </div>
 </body>
 </html>
