@@ -4,6 +4,8 @@ from crypto import CryptoManager
 import os
 import time
 from colorama import init, Fore, Back, Style
+import json
+import zipfile
 
 init(autoreset=True)  # Инициализация colorama
 
@@ -40,6 +42,93 @@ def print_menu():
     )
 
 
+class MessageHistory:
+
+    def __init__(self, crypto_manager, nickname):
+        self.crypto = crypto_manager
+        self.nickname = nickname
+        self.messages = []
+
+    def add_message(self, sender, receiver, text):
+        self.messages.append({
+            'sender': sender,
+            'receiver': receiver,
+            'text': text
+        })
+
+    def encrypt_history(self):
+        encrypted_messages = []
+        for message in self.messages:
+            encrypted_message = {
+                'sender':
+                self.crypto.encrypt(message['sender'],
+                                     self.crypto.get_public_key()),
+                'receiver':
+                self.crypto.encrypt(message['receiver'],
+                                     self.crypto.get_public_key()),
+                'text':
+                self.crypto.encrypt(message['text'],
+                                     self.crypto.get_public_key())
+            }
+            encrypted_messages.append(encrypted_message)
+        return encrypted_messages
+
+    def decrypt_history(self, encrypted_messages):
+        decrypted_messages = []
+        for message in encrypted_messages:
+            decrypted_message = {
+                'sender':
+                self.crypto.decrypt(message['sender']),
+                'receiver':
+                self.crypto.decrypt(message['receiver']),
+                'text':
+                self.crypto.decrypt(message['text'])
+            }
+            decrypted_messages.append(decrypted_message)
+        return decrypted_messages
+
+    def export_history(self, filename):
+        encrypted_messages = self.encrypt_history()
+        history_data = {
+            'nickname': self.nickname,
+            'public_key': self.crypto.get_public_key_str(),
+            'messages': encrypted_messages
+        }
+        json_data = json.dumps(history_data)
+        zip_filename = f"{filename}.zip"
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr("history.json", json_data)
+        return zip_filename
+
+    def import_history(self, filename):
+        try:
+            with zipfile.ZipFile(filename, 'r') as zipf:
+                with zipf.open("history.json") as json_file:
+                    json_data = json_file.read().decode('utf-8')
+            history_data = json.loads(json_data)
+
+            if history_data['nickname'] != self.nickname:
+                print(
+                    f"{Fore.RED}[!] Никнеймы не совпадают. Импорт невозможен.{Style.RESET_ALL}"
+                )
+                return False
+
+            if history_data['public_key'] != self.crypto.get_public_key_str():
+                print(
+                    f"{Fore.RED}[!] Ключи шифрования не совпадают. Импорт невозможен.{Style.RESET_ALL}"
+                )
+                return False
+
+            encrypted_messages = history_data['messages']
+            self.messages = self.decrypt_history(encrypted_messages)
+            print(f"{Fore.GREEN}[+] История успешно импортирована.{Style.RESET_ALL}")
+            return True
+
+        except Exception as e:
+            print(f"{Fore.RED}[!] Ошибка при импорте истории: {e}{Style.RESET_ALL}")
+            return False
+
+
 class P2PClient:
 
     def __init__(self, on_receive_callback, nickname):
@@ -49,6 +138,7 @@ class P2PClient:
         self.on_receive = on_receive_callback
         self.crypto = CryptoManager()
         self.nickname = nickname
+        self.history = MessageHistory(self.crypto, self.nickname)
 
     def __del__(self):
         try:
@@ -82,7 +172,9 @@ class P2PClient:
                     try:
                         decrypted_msg = self.crypto.decrypt(msg)
                         nickname = self.get_nickname((addr[0], addr[1]))
+                        sender_nickname = self.get_nickname((addr[0], addr[1]))
                         self.on_receive(f"<b>{nickname} → {decrypted_msg}</b>")
+                        self.history.add_message(sender_nickname, self.nickname, decrypted_msg)
                     except Exception as e:
                         self.on_receive(
                             f"{Fore.RED}[!] Ошибка расшифровки: {e}{Style.RESET_ALL}"
@@ -119,14 +211,21 @@ class P2PClient:
             )
             return
         try:
-            pub_key = self.contacts[addr][
-                0]  # Get just the public key from the tuple
+            pub_key = self.contacts[addr][0]
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
+            # Сохраняем отправленное сообщение в историю
+            self.history.add_message(self.nickname, self.contacts[addr][1], text)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
             )
+
+    def export_history(self, filename: str):
+        return self.history.export_history(filename)
+
+    def import_history(self, filename: str):
+        return self.history.import_history(filename)
 
 
 if __name__ == '__main__':
@@ -236,6 +335,19 @@ if __name__ == '__main__':
                     print(
                         f"{Fore.GREEN}[i] Переключено на {new_contact}{Style.RESET_ALL}"
                     )
+            elif msg == "/export":
+                filename = input(
+                    f"{Fore.YELLOW}Введите имя файла для экспорта истории: {Style.RESET_ALL}"
+                )
+                exported_file = client.export_history(filename)
+                print(
+                    f"{Fore.GREEN}[+] История экспортирована в {exported_file}{Style.RESET_ALL}"
+                )
+            elif msg == "/import":
+                filename = input(
+                    f"{Fore.YELLOW}Введите имя файла для импорта истории: {Style.RESET_ALL}"
+                )
+                client.import_history(filename)
             elif msg:
                 client.send_to(ip, port, msg)
                 messages.append(f"{Fore.GREEN}Вы → {Style.RESET_ALL}{msg}")
