@@ -183,7 +183,7 @@ class ChatWindow(QMainWindow):
             if self.client.import_history(filename):
                 # Показываем импортированные сообщения в чате
                 for msg in self.client.history.messages:
-                    self.display_message(f"{msg['sender']} → {msg['recipient']}: {msg['message']}")
+                    self.display_message(f"{msg['sender']} → {msg['message']}")
                 QMessageBox.information(self, "Успех", "История успешно импортирована")
             else:
                 QMessageBox.warning(self, "Ошибка", "Не удалось импортировать историю")
