@@ -96,7 +96,7 @@ class MessageHistory:
             'messages': encrypted_messages
         }
         json_data = json.dumps(history_data)
-        zip_filename = f"{filename}.zip"
+        zip_filename = f"{filename}"
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr("history.json", json_data)
         return zip_filename

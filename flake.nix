@@ -17,8 +17,8 @@
         pythonEnv = pkgs.python3.withPackages (ps: with ps; [
           pyqt5
           rsa
-          qrcode
-          pillow
+          cryptography
+          colorama
         ]);
         
       in {
