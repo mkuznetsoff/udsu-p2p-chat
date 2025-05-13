@@ -16,12 +16,30 @@ def login():
 @app.route('/login', methods=["POST"])
 def handle_login():
     username = request.form.get("username")
+    server_choice = request.form.get("serverChoice")
+    
     if username:
+        # Определение адреса сервера
+        if server_choice == "local":
+            server_address = ("0.0.0.0", 3000)
+        elif server_choice == "smart":
+            server_address = ("smartcontrol.su", 3000)
+        elif server_choice == "custom":
+            custom_server = request.form.get("customServerAddress", "").split(":")
+            if len(custom_server) == 2:
+                server_address = (custom_server[0], int(custom_server[1]))
+            else:
+                return "Неверный формат адреса сервера", 400
+        else:
+            return "Неверный выбор сервера", 400
+
         session['username'] = username
         if username not in clients:
             clients[username] = P2PClient(
                 on_receive_callback=lambda msg: chat_messages.append(msg),
-                nickname=username
+                nickname=username,
+                server_host=server_address[0],
+                server_port=server_address[1]
             )
             clients[username].start()
         return redirect(url_for('index'))

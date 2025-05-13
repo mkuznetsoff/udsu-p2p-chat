@@ -19,12 +19,13 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 300px;
         }
         h1 {
             margin: 0 0 20px 0;
             color: #333;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -44,6 +45,13 @@
         button:hover {
             background-color: #007ab8;
         }
+        .server-select {
+            margin-bottom: 15px;
+        }
+        #customServer {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -51,8 +59,25 @@
         <h1>P2P Chat</h1>
         <form method="POST" action="/login">
             <input type="text" name="username" placeholder="Введите ваш ник" required>
+            <div class="server-select">
+                <select name="serverChoice" id="serverChoice" onchange="toggleCustomServer()">
+                    <option value="local">0.0.0.0:3000</option>
+                    <option value="smart">smartcontrol.su:3000</option>
+                    <option value="custom">Другой сервер</option>
+                </select>
+                <div id="customServer">
+                    <input type="text" name="customServerAddress" placeholder="Адрес:порт">
+                </div>
+            </div>
             <button type="submit">Войти</button>
         </form>
     </div>
+    <script>
+        function toggleCustomServer() {
+            const choice = document.getElementById('serverChoice').value;
+            const customServer = document.getElementById('customServer');
+            customServer.style.display = choice === 'custom' ? 'block' : 'none';
+        }
+    </script>
 </body>
 </html>
