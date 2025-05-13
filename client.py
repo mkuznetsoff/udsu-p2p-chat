@@ -221,7 +221,9 @@ class P2PClient:
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
             )
 
-    def export_history(self, filename: str):
+    def export_history(self, directory: str):
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(directory, f"chat_history_{timestamp}_{self.nickname}.zip")
         return self.history.export_history(filename)
 
     def import_history(self, filename: str):

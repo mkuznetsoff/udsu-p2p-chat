@@ -10,14 +10,14 @@ class ExportWorker(QThread):
     success = pyqtSignal()
     error = pyqtSignal()
     
-    def __init__(self, client, filename):
+    def __init__(self, client, directory):
         super().__init__()
         self.client = client
-        self.filename = filename
+        self.directory = directory
         
     def run(self):
         try:
-            if self.client.export_history(self.filename):
+            if self.client.export_history(self.directory):
                 self.success.emit()
             else:
                 self.error.emit()
