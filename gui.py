@@ -3,7 +3,28 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
                              QHBoxLayout, QMessageBox, QLabel, QInputDialog,
                              QFileDialog)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
+
+class ExportWorker(QThread):
+    finished = pyqtSignal()
+    success = pyqtSignal()
+    error = pyqtSignal()
+    
+    def __init__(self, client, filename):
+        super().__init__()
+        self.client = client
+        self.filename = filename
+        
+    def run(self):
+        try:
+            if self.client.export_history(self.filename):
+                self.success.emit()
+            else:
+                self.error.emit()
+        except Exception:
+            self.error.emit()
+        finally:
+            self.finished.emit()
 from PyQt5.QtGui import QFont, QColor, QPalette
 from client import P2PClient  # Подключи свой класс клиента
 
@@ -73,11 +94,18 @@ class ChatWindow(QMainWindow):
         buttons_layout = QHBoxLayout()
         self.export_button = QPushButton("Экспорт")
         self.import_button = QPushButton("Импорт")
+        self.export_button.setObjectName("historyButton")
+        self.import_button.setObjectName("historyButton")
         self.export_button.clicked.connect(self.export_history)
         self.import_button.clicked.connect(self.import_history)
         buttons_layout.addWidget(self.export_button)
         buttons_layout.addWidget(self.import_button)
         contacts_layout.addLayout(buttons_layout)
+        
+        # Таймер для автообновления контактов
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.update_contacts)
+        self.refresh_timer.start(5000)  # Обновление каждые 5 секунд
 
         main_layout = QHBoxLayout()
         main_layout.addLayout(contacts_layout)
@@ -128,10 +156,28 @@ class ChatWindow(QMainWindow):
         if filename:
             if not filename.endswith('.zip'):
                 filename += '.zip'
-            if self.client.export_history(filename):
-                QMessageBox.information(self, "Успех", "История успешно экспортирована")
-            else:
-                QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать историю")
+            # Создаем отдельный поток для экспорта
+            self.export_thread = QThread()
+            self.export_worker = ExportWorker(self.client, filename)
+            self.export_worker.moveToThread(self.export_thread)
+            
+            self.export_thread.started.connect(self.export_worker.run)
+            self.export_worker.finished.connect(self.export_thread.quit)
+            self.export_worker.finished.connect(self.export_worker.deleteLater)
+            self.export_thread.finished.connect(self.export_thread.deleteLater)
+            self.export_worker.success.connect(self.on_export_success)
+            self.export_worker.error.connect(self.on_export_error)
+            
+            self.export_thread.start()
+            self.export_button.setEnabled(False)
+            
+    def on_export_success(self):
+        self.export_button.setEnabled(True)
+        QMessageBox.information(self, "Успех", "История успешно экспортирована")
+        
+    def on_export_error(self):
+        self.export_button.setEnabled(True)
+        QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать историю")
 
     def import_history(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Импорт истории", "", "ZIP Files (*.zip)")
@@ -157,6 +203,17 @@ class ChatWindow(QMainWindow):
             background-color: #f8f8f8;
             font-family: "Segoe UI", sans-serif;
             font-size: 14px;
+        }
+        QPushButton#historyButton {
+            background-color: #0088cc;
+            color: white;
+            border-radius: 5px;
+            padding: 8px 16px;
+            font-weight: bold;
+            min-width: 80px;
+        }
+        QPushButton#historyButton:hover {
+            background-color: #007ab8;
         }
         QTextEdit#chatDisplay {
             background-color: white;
