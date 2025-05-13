@@ -42,8 +42,63 @@ class ChatWindow(QMainWindow):
         if not ok or not nickname:
             sys.exit()
 
+        # Создаем диалог выбора сервера
+        server_dialog = QDialog(self)
+        server_dialog.setWindowTitle("Выбор сервера")
+        layout = QVBoxLayout()
+        
+        combo = QComboBox()
+        combo.addItems(["0.0.0.0:3000", "smartcontrol.su:3000", "Другой сервер"])
+        layout.addWidget(combo)
+        
+        custom_input = QLineEdit()
+        custom_input.setPlaceholderText("Адрес:порт")
+        custom_input.hide()
+        layout.addWidget(custom_input)
+        
+        def on_combo_changed(text):
+            custom_input.setVisible(text == "Другой сервер")
+        
+        combo.currentTextChanged.connect(on_combo_changed)
+        
+        buttons = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("Отмена")
+        buttons.addWidget(ok_button)
+        buttons.addWidget(cancel_button)
+        layout.addLayout(buttons)
+        
+        server_dialog.setLayout(layout)
+        
+        def on_ok():
+            server_dialog.accept()
+        
+        def on_cancel():
+            server_dialog.reject()
+        
+        ok_button.clicked.connect(on_ok)
+        cancel_button.clicked.connect(on_cancel)
+        
+        if server_dialog.exec_() != QDialog.Accepted:
+            sys.exit()
+            
+        # Получаем выбранный адрес сервера
+        selected = combo.currentText()
+        if selected == "0.0.0.0:3000":
+            server_host, server_port = "0.0.0.0", 3000
+        elif selected == "smartcontrol.su:3000":
+            server_host, server_port = "smartcontrol.su", 3000
+        else:
+            custom_addr = custom_input.text().split(":")
+            if len(custom_addr) != 2:
+                QMessageBox.critical(self, "Ошибка", "Неверный формат адреса")
+                sys.exit()
+            server_host, server_port = custom_addr[0], int(custom_addr[1])
+
         self.client = P2PClient(on_receive_callback=self.display_message,
-                                nickname=nickname)
+                              nickname=nickname,
+                              server_host=server_host,
+                              server_port=server_port)
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames

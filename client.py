@@ -132,7 +132,7 @@ class MessageHistory:
 
 class P2PClient:
 
-    def __init__(self, on_receive_callback, nickname):
+    def __init__(self, on_receive_callback, nickname, server_host='0.0.0.0', server_port=3000):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
@@ -140,6 +140,8 @@ class P2PClient:
         self.nickname = nickname
         self.crypto = CryptoManager(nickname)
         self.history = MessageHistory(self.crypto, self.nickname)
+        self.server_host = server_host
+        self.server_port = server_port
 
     def __del__(self):
         try:
@@ -160,7 +162,7 @@ class P2PClient:
         threading.Thread(target=self.listen, daemon=True).start()
         threading.Thread(target=self.request_contacts_update, daemon=True).start()
         join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
-        self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
+        self.sock.sendto(join_msg.encode('utf-8'), (self.server_host, self.server_port))
 
     def listen(self):
         while True:
