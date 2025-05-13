@@ -6,16 +6,26 @@ import os
 
 class CryptoManager:
     def __init__(self, nickname=None):
-        self.keys_file = f"keys_{nickname}.pem" if nickname else None
-        
-        if nickname and os.path.exists(self.keys_file):
-            # Загружаем существующий ключ
-            with open(self.keys_file, 'rb') as f:
-                self.private_key = serialization.load_pem_private_key(
-                    f.read(),
-                    password=None
-                )
-                self.public_key = self.private_key.public_key()
+        if nickname:
+            # Определяем директорию для хранения ключей в зависимости от ОС
+            if os.name == 'nt':  # Windows
+                base_dir = os.path.join(os.getenv('APPDATA'), 'P2P-Chat')
+            else:  # Linux/Unix
+                base_dir = os.path.join(os.path.expanduser('~'), '.config', 'p2p-chat')
+            
+            # Создаем директорию если её нет
+            os.makedirs(base_dir, mode=0o700, exist_ok=True)
+            
+            self.keys_file = os.path.join(base_dir, f'keys_{nickname}.pem')
+            
+            if os.path.exists(self.keys_file):
+                # Загружаем существующий ключ
+                with open(self.keys_file, 'rb') as f:
+                    self.private_key = serialization.load_pem_private_key(
+                        f.read(),
+                        password=None
+                    )
+                    self.public_key = self.private_key.public_key()
         else:
             # Генерируем новую пару ключей
             self.private_key = rsa.generate_private_key(
