@@ -221,13 +221,21 @@ class P2PClient:
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
             )
 
-    def export_history(self, directory: str):
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(directory, f"chat_history_{timestamp}_{self.nickname}.zip")
-        return self.history.export_history(filename)
+    def export_history(self, directory: str) -> bool:
+        try:
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(directory, f"chat_history_{timestamp}_{self.nickname}.zip")
+            return self.history.export_history(filename)
+        except Exception as e:
+            print(f"Error during export: {e}")
+            return False
 
-    def import_history(self, filename: str):
-        return self.history.import_history(filename)
+    def import_history(self, filename: str) -> bool:
+        try:
+            return self.history.import_history(filename)
+        except Exception as e:
+            print(f"Error during import: {e}")
+            return False
 
 
 if __name__ == '__main__':
