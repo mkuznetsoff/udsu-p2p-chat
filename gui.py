@@ -1,7 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
-                             QHBoxLayout, QMessageBox, QLabel, QInputDialog)
+                             QHBoxLayout, QMessageBox, QLabel, QInputDialog,
+                             QFileDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QPalette
 from client import P2PClient  # Подключи свой класс клиента
@@ -67,6 +68,16 @@ class ChatWindow(QMainWindow):
         contacts_layout.addWidget(QLabel("Контакты"))
         contacts_layout.addWidget(self.update_contacts_button)
         contacts_layout.addWidget(self.contact_list)
+        
+        # Кнопки экспорта/импорта
+        buttons_layout = QHBoxLayout()
+        self.export_button = QPushButton("Экспорт")
+        self.import_button = QPushButton("Импорт")
+        self.export_button.clicked.connect(self.export_history)
+        self.import_button.clicked.connect(self.import_history)
+        buttons_layout.addWidget(self.export_button)
+        buttons_layout.addWidget(self.import_button)
+        contacts_layout.addLayout(buttons_layout)
 
         main_layout = QHBoxLayout()
         main_layout.addLayout(contacts_layout)
@@ -112,11 +123,30 @@ class ChatWindow(QMainWindow):
         else:
             return f"{addr[0]}:{addr[1]}"  # Fallback to IP:port if nickname not found
 
+    def export_history(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "Экспорт истории", "", "ZIP Files (*.zip)")
+        if filename:
+            if not filename.endswith('.zip'):
+                filename += '.zip'
+            if self.client.export_history(filename):
+                QMessageBox.information(self, "Успех", "История успешно экспортирована")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать историю")
+
+    def import_history(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Импорт истории", "", "ZIP Files (*.zip)")
+        if filename:
+            if self.client.import_history(filename):
+                QMessageBox.information(self, "Успех", "История успешно импортирована")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Не удалось импортировать историю")
+
     def handle_close(self, event):
         """Обработка закрытия окна"""
         try:
             if self.client:
                 self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+                self.client.sock.close()
         except:
             pass
         event.accept()

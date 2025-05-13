@@ -24,13 +24,15 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                     if member != addr:
                         s.sendto(f"__leave {addr[0]} {addr[1]} {nickname}".encode(), member)
                 del members[addr]
-                print(f'[-] Client {nickname} ({addr}) left.')
+                print(f'\n[-] Клиент {nickname} ({addr}) покинул чат')
+                print(f'[i] Активные пользователи: {", ".join([members[m][1] for m in members if m != addr])}')
                 
         elif msg.startswith('__join'):
             if addr not in members and len(members) < MAX_CLIENTS:
                 _, public_key, nickname = msg.split(maxsplit=2)
                 members[addr] = (public_key, nickname)
-                print(f'[+] Client {nickname} ({addr}) joined.')
+                print(f'\n[+] Клиент {nickname} ({addr}) присоединился к чату')
+                print(f'[i] Активные пользователи: {", ".join([members[m][1] for m in members])}')
                 # Уведомляем всех о новом участнике
                 for member in members:
                     if member != addr:
