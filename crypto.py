@@ -6,6 +6,10 @@ import os
 
 class CryptoManager:
     def __init__(self, nickname=None):
+        self.private_key = None
+        self.public_key = None
+        self.keys_file = None
+
         if nickname:
             # Определяем директорию для хранения ключей в зависимости от ОС
             if os.name == 'nt':  # Windows
@@ -25,14 +29,29 @@ class CryptoManager:
                         f.read(),
                         password=None
                     )
-                    self.public_key = self.private_key.public_key()
+            else:
+                # Генерируем новую пару ключей
+                self.private_key = rsa.generate_private_key(
+                    public_exponent=65537,
+                    key_size=2048
+                )
+                # Сохраняем ключ
+                pem = self.private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+                with open(self.keys_file, 'wb') as f:
+                    f.write(pem)
         else:
-            # Генерируем новую пару ключей
+            # Генерируем новую пару ключей без сохранения
             self.private_key = rsa.generate_private_key(
                 public_exponent=65537,
                 key_size=2048
             )
-            self.public_key = self.private_key.public_key()
+            
+        # Всегда создаем public_key из private_key
+        self.public_key = self.private_key.public_key()
             
             # Сохраняем ключ если указан nickname
             if nickname:
