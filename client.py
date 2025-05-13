@@ -234,7 +234,8 @@ class P2PClient:
     def export_history(self, directory: str) -> bool:
         try:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
-            filename = os.path.join(directory, f"chat_history_{timestamp}_{self.nickname}.zip")
+            base_filename = os.path.join(directory, f"chat_history_{timestamp}_{self.nickname}")
+            filename = base_filename if base_filename.endswith('.zip') else f"{base_filename}.zip"
             return self.history.export_history(filename)
         except Exception as e:
             print(f"Error during export: {e}")

@@ -69,7 +69,9 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                             mem_key, mem_nick = members[member]
                             s.sendto(f"__peer {member[0]} {member[1]} {mem_key} {mem_nick}".encode(), addr)
             
-            # Выводим текущих активных пользователей
+            # Очищаем экран и выводим состояние
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print(f'\n[SERVER] Listening at {host}:{port}')
             active_users = ", ".join([members[m][1] for m in members])
             print(f'[i] Активные пользователи: {active_users if active_users else "нет"}')
             

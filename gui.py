@@ -181,6 +181,9 @@ class ChatWindow(QMainWindow):
         filename, _ = QFileDialog.getOpenFileName(self, "Импорт истории", "", "ZIP Files (*.zip)")
         if filename:
             if self.client.import_history(filename):
+                # Показываем импортированные сообщения в чате
+                for msg in self.client.history.messages:
+                    self.display_message(f"{msg['sender']} → {msg['recipient']}: {msg['message']}")
                 QMessageBox.information(self, "Успех", "История успешно импортирована")
             else:
                 QMessageBox.warning(self, "Ошибка", "Не удалось импортировать историю")
