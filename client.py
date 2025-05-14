@@ -227,7 +227,8 @@ class P2PClient:
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
             # Сохраняем отправленное сообщение в историю
-            self.history.add_message(self.nickname, self.contacts[addr][1], text)
+            recipient_nickname = self.contacts[addr][1]
+            self.history.add_message(self.nickname, recipient_nickname, text)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
