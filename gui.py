@@ -203,6 +203,8 @@ class ChatWindow(QMainWindow):
             self.display_message(f"<b>Вы → {text}</b>")
             self.message_input.clear()
         except Exception as e:
+            print(f"[DEBUG] Ошибка отправки: {e}")
+            print(f"[DEBUG] Текущий сервер: {self.client.server_host}:{self.client.server_port}")
             self.display_message(f"<span style='color: red'>Ошибка отправки: {e}</span>")
 
     def get_nickname(self, addr):

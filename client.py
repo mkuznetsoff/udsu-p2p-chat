@@ -348,7 +348,7 @@ if __name__ == '__main__':
                     f"\n{Fore.YELLOW}Обновление списка клиентов...{Style.RESET_ALL}"
                 )
                 client.sock.sendto(b'__request_keys',
-                                   (SERVER_HOST, SERVER_PORT))
+                                   (client.server_host, client.server_port))
                 time.sleep(1)
                 print(f"{Fore.CYAN}Доступные клиенты:{Style.RESET_ALL}")
                 for contact in client.list_contacts():
