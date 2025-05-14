@@ -11,8 +11,6 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 3000
 
 
 def clear_screen():
@@ -153,7 +151,7 @@ class P2PClient:
     def request_contacts_update(self):
         while True:
             try:
-                self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+                self.sock.sendto(b'__request_keys', (self.server_host, self.server_port))
                 time.sleep(10)  # Обновляем каждые 10 секунд
             except:
                 break
@@ -283,7 +281,7 @@ if __name__ == '__main__':
     def wait_for_contacts(timeout=5):
         print(f"{Fore.YELLOW}Поиск других участников...{Style.RESET_ALL}")
         for i in range(timeout):
-            client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
+            client.sock.sendto(b'__request_keys', (client.server_host, client.server_port))
             time.sleep(1)
             if client.list_contacts():
                 return True
