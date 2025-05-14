@@ -145,7 +145,7 @@ class P2PClient:
 
     def __del__(self):
         try:
-            self.sock.sendto('__exit'.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
+            self.sock.sendto('__exit'.encode('utf-8'), (self.server_host, self.server_port))
             self.sock.close()
         except:
             pass
