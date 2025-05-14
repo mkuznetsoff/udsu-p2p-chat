@@ -5,3 +5,5 @@ colorama
 pyinstaller
 pypiwin32
 flask
+cryptography
+pyqt5

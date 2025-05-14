@@ -38,8 +38,8 @@ class ChatWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 550)
         
         # Register QTextCursor for threading
-        from PyQt5.QtCore import qRegisterMetaType
-        qRegisterMetaType('QTextCursor')
+        from PyQt5.QtCore import QMetaType
+        QMetaType.registerType('QTextCursor')
         
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
