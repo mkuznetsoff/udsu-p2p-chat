@@ -1,8 +1,11 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 dist/
-*.spec
 *.pem
 *.toml
+*.spec
 .replit
 build/
+attached_assets
+uv.lock
+build.py

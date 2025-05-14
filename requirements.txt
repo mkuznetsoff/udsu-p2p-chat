@@ -3,3 +3,4 @@ rsa
 cryptography
 colorama
 pyinstaller
+pypiwin32
