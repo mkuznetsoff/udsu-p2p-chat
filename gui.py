@@ -27,7 +27,7 @@ class ExportWorker(QThread):
         finally:
             self.finished.emit()
 from PyQt5.QtGui import QFont, QColor, QPalette
-from client import P2PClient, SERVER_HOST, SERVER_PORT  # Импортируем константы
+from client import P2PClient  # Импортируем только P2PClient
 
 
 class ChatWindow(QMainWindow):
