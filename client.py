@@ -11,7 +11,7 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 3000
 
 
@@ -171,6 +171,8 @@ class P2PClient:
                 if msg.startswith('__peer'):
                     _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
                     self.contacts[(ip, int(port))] = (pub_key, nickname)
+                    # Пробиваем NAT у удалённого клиента
+                    self.sock.sendto(b'__punch', (ip, int(port)))
                     self.on_receive(f"[+] Обнаружен клиент {nickname}")
                 elif msg.startswith('__leave'):
                     _, ip, port, nickname = msg.split(maxsplit=3)
