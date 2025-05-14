@@ -36,7 +36,11 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
-
+        
+        # Register QTextCursor for threading
+        from PyQt5.QtCore import qRegisterMetaType
+        qRegisterMetaType('QTextCursor')
+        
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
         if not ok or not nickname:
@@ -190,7 +194,12 @@ class ChatWindow(QMainWindow):
         self.display_message(f"[i] Вы выбрали: {nickname}")
 
     def display_message(self, message):
-        self.chat_display.append(message)
+        # Используем invokeMethod для потокобезопасного обновления GUI
+        from PyQt5.QtCore import Qt, QMetaObject
+        QMetaObject.invokeMethod(self.chat_display, 
+                               "append",
+                               Qt.QueuedConnection,
+                               Q_ARG(str, message))
 
     def send_message(self):
         text = self.message_input.text().strip()
