@@ -167,7 +167,9 @@ class P2PClient:
     def listen(self):
         while True:
             try:
+                print("[DEBUG] Ожидание сообщений...")
                 msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
+                print(f"[DEBUG] Получено сообщение от {addr[0]}:{addr[1]}")
                 msg = msg.decode('utf-8')
 
                 if msg.startswith('__peer'):
@@ -225,7 +227,10 @@ class P2PClient:
         try:
             pub_key = self.contacts[addr][0]
             encrypted = self.crypto.encrypt(text, pub_key)
-            self.sock.sendto(encrypted.encode('utf-8'), addr)
+            # Сначала шифруем, потом кодируем в utf-8
+            message = encrypted.encode('utf-8')
+            print(f"[DEBUG] Отправка сообщения на {ip}:{port}")
+            self.sock.sendto(message, addr)
             # Сохраняем отправленное сообщение в историю
             recipient_nickname = self.contacts[addr][1]
             self.history.add_message(self.nickname, recipient_nickname, text)

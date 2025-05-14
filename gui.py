@@ -196,10 +196,14 @@ class ChatWindow(QMainWindow):
         text = self.message_input.text().strip()
         if not text or not self.current_contact:
             return
-        ip, port = self.current_contact.split(':')
-        self.client.send_to(ip, int(port), text)
-        self.display_message(f"<b>Вы → {text}</b>")
-        self.message_input.clear()
+        try:
+            ip, port = self.current_contact.split(':')
+            print(f"[DEBUG] Отправка сообщения на {ip}:{port}")
+            self.client.send_to(ip, int(port), text)
+            self.display_message(f"<b>Вы → {text}</b>")
+            self.message_input.clear()
+        except Exception as e:
+            self.display_message(f"<span style='color: red'>Ошибка отправки: {e}</span>")
 
     def get_nickname(self, addr):
         if addr in self.nicknames:
