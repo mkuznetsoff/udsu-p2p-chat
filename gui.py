@@ -258,7 +258,7 @@ class ChatWindow(QMainWindow):
         try:
             if self.client:
                 print("[i] Отключение от сервера...")
-                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+                self.client.sock.sendto('__exit'.encode(), (self.client.server_host, self.client.server_port))
                 # Даем серверу время на обработку
                 time.sleep(0.5)
                 self.client.sock.close()
