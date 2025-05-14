@@ -10,12 +10,12 @@ class ExportWorker(QThread):
     finished = pyqtSignal()
     success = pyqtSignal()
     error = pyqtSignal()
-
+    
     def __init__(self, client, directory):
         super().__init__()
         self.client = client
         self.directory = directory
-
+        
     def run(self):
         try:
             if self.client.export_history(self.directory):
@@ -27,7 +27,7 @@ class ExportWorker(QThread):
         finally:
             self.finished.emit()
 from PyQt5.QtGui import QFont, QColor, QPalette
-from client import P2PClient  # Импортируем только P2PClient
+from client import P2PClient, SERVER_HOST, SERVER_PORT  # Импортируем константы
 
 
 class ChatWindow(QMainWindow):
@@ -36,14 +36,6 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
-
-        # Create widgets first
-        self.chat_display = QTextEdit()
-        self.chat_display.setReadOnly(True)
-        self.chat_display.setObjectName("chatDisplay")
-
-        # Now we can safely move it to the thread
-        self.chat_display.moveToThread(self.thread())
 
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
@@ -54,42 +46,42 @@ class ChatWindow(QMainWindow):
         server_dialog = QDialog(self)
         server_dialog.setWindowTitle("Выбор сервера")
         layout = QVBoxLayout()
-
+        
         combo = QComboBox()
         combo.addItems(["0.0.0.0:3000", "smartcontrol.su:3000", "Другой сервер"])
         layout.addWidget(combo)
-
+        
         custom_input = QLineEdit()
         custom_input.setPlaceholderText("Адрес:порт")
         custom_input.hide()
         layout.addWidget(custom_input)
-
+        
         def on_combo_changed(text):
             custom_input.setVisible(text == "Другой сервер")
-
+        
         combo.currentTextChanged.connect(on_combo_changed)
-
+        
         buttons = QHBoxLayout()
         ok_button = QPushButton("OK")
         cancel_button = QPushButton("Отмена")
         buttons.addWidget(ok_button)
         buttons.addWidget(cancel_button)
         layout.addLayout(buttons)
-
+        
         server_dialog.setLayout(layout)
-
+        
         def on_ok():
             server_dialog.accept()
-
+        
         def on_cancel():
             server_dialog.reject()
-
+        
         ok_button.clicked.connect(on_ok)
         cancel_button.clicked.connect(on_cancel)
-
+        
         if server_dialog.exec_() != QDialog.Accepted:
             sys.exit()
-
+            
         # Получаем выбранный адрес сервера
         selected = combo.currentText()
         if selected == "0.0.0.0:3000":
@@ -116,6 +108,10 @@ class ChatWindow(QMainWindow):
         # Основной виджет и компоненты
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
+
+        self.chat_display = QTextEdit()
+        self.chat_display.setReadOnly(True)
+        self.chat_display.setObjectName("chatDisplay")
 
         self.message_input = QLineEdit()
         self.message_input.setPlaceholderText("Напишите сообщение...")
@@ -149,7 +145,7 @@ class ChatWindow(QMainWindow):
         contacts_layout.addWidget(QLabel("Контакты"))
         contacts_layout.addWidget(self.update_contacts_button)
         contacts_layout.addWidget(self.contact_list)
-
+        
         # Кнопки экспорта/импорта
         buttons_layout = QHBoxLayout()
         self.export_button = QPushButton("Экспорт")
@@ -161,7 +157,7 @@ class ChatWindow(QMainWindow):
         buttons_layout.addWidget(self.export_button)
         buttons_layout.addWidget(self.import_button)
         contacts_layout.addLayout(buttons_layout)
-
+        
         # Таймер для автообновления контактов
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.update_contacts)
@@ -194,12 +190,7 @@ class ChatWindow(QMainWindow):
         self.display_message(f"[i] Вы выбрали: {nickname}")
 
     def display_message(self, message):
-        # Используем invokeMethod для потокобезопасного обновления GUI
-        from PyQt5.QtCore import Qt, QMetaObject
-        QMetaObject.invokeMethod(self.chat_display, 
-                               "append",
-                               Qt.QueuedConnection,
-                               Q_ARG(str, message))
+        self.chat_display.append(message)
 
     def send_message(self):
         text = self.message_input.text().strip()
@@ -223,21 +214,21 @@ class ChatWindow(QMainWindow):
             self.export_thread = QThread()
             self.export_worker = ExportWorker(self.client, directory)
             self.export_worker.moveToThread(self.export_thread)
-
+            
             self.export_thread.started.connect(self.export_worker.run)
             self.export_worker.finished.connect(self.export_thread.quit)
             self.export_worker.finished.connect(self.export_worker.deleteLater)
             self.export_thread.finished.connect(self.export_thread.deleteLater)
             self.export_worker.success.connect(self.on_export_success)
             self.export_worker.error.connect(self.on_export_error)
-
+            
             self.export_thread.start()
             self.export_button.setEnabled(False)
-
+            
     def on_export_success(self):
         self.export_button.setEnabled(True)
         QMessageBox.information(self, "Успех", "История успешно экспортирована")
-
+        
     def on_export_error(self):
         self.export_button.setEnabled(True)
         QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать историю")
@@ -258,7 +249,7 @@ class ChatWindow(QMainWindow):
         try:
             if self.client:
                 print("[i] Отключение от сервера...")
-                self.client.sock.sendto('__exit'.encode(), (self.client.server_host, self.client.server_port))
+                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
                 # Даем серверу время на обработку
                 time.sleep(0.5)
                 self.client.sock.close()
