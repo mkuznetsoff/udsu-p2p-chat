@@ -14,7 +14,7 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
 
     members = {}  # {addr: (public_key, nickname)}
     last_activity = {}  # {addr: timestamp}
-    TIMEOUT = 10  # seconds
+    TIMEOUT = 30  # seconds
 
     while True:
         try:
