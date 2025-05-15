@@ -1,4 +1,3 @@
-
 import socket
 import time
 import os
@@ -15,13 +14,18 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
 
     members = {}  # {addr: (public_key, nickname)}
     last_activity = {}  # {addr: timestamp}
-    TIMEOUT = 30  # seconds
+    TIMEOUT = 10  # seconds
 
     while True:
         try:
             msg, addr = s.recvfrom(UDP_MAX_SIZE)
             msg = msg.decode('utf-8')
             current_time = time.time()
+            
+            # Используем адрес, с которого пришел запрос
+            client_ip = addr[0]
+            if client_ip.startswith('192.168.') or client_ip.startswith('10.') or client_ip.startswith('172.'):
+                client_ip = s.getsockname()[0]  # Используем IP сервера
             
             # Обновляем время последней активности
             if addr in members:
