@@ -25,6 +25,7 @@
         devShell = pkgs.mkShell {
           buildInputs = [
             pythonEnv
+            pkgs.python3
             pkgs.qt5.qttools
             pkgs.glib
             pkgs.libsForQt5.wrapQtAppsHook

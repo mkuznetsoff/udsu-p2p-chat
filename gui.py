@@ -3,7 +3,7 @@ import time
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
                              QHBoxLayout, QMessageBox, QLabel, QInputDialog,
-                             QFileDialog, QDialog, QComboBox)
+                             QFileDialog)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 
 class ExportWorker(QThread):
@@ -27,8 +27,7 @@ class ExportWorker(QThread):
         finally:
             self.finished.emit()
 from PyQt5.QtGui import QFont, QColor, QPalette
-from client import P2PClient, SERVER_HOST, SERVER_PORT  # Импортируем константы
-
+from client import P2PClient  # Импортируем P2PClient
 
 class ChatWindow(QMainWindow):
 
@@ -36,69 +35,60 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
+        
+        # Диалог конфигурации сервера
+        server_dialog = QDialog(self)
+        server_dialog.setWindowTitle("Конфигурация сервера")
+        layout = QVBoxLayout()
+        
+        # Выпадающий список предустановленных серверов
+        self.server_combo = QComboBox()
+        self.server_combo.addItems(["Локальный (0.0.0.0:3000)", "Пользовательский"])
+        layout.addWidget(self.server_combo)
+        
+        # Поля для пользовательского сервера
+        self.host_input = QLineEdit()
+        self.host_input.setPlaceholderText("Адрес сервера")
+        self.port_input = QLineEdit()
+        self.port_input.setPlaceholderText("Порт")
+        self.port_input.setText("3000")
+        
+        custom_layout = QVBoxLayout()
+        custom_layout.addWidget(self.host_input)
+        custom_layout.addWidget(self.port_input)
+        layout.addLayout(custom_layout)
+        
+        # Кнопка подтверждения
+        confirm_button = QPushButton("Подключиться")
+        confirm_button.clicked.connect(server_dialog.accept)
+        layout.addWidget(confirm_button)
+        
+        server_dialog.setLayout(layout)
+        
+        if server_dialog.exec_() != QDialog.Accepted:
+            sys.exit()
+            
+        # Получаем конфигурацию сервера
+        if self.server_combo.currentText() == "Локальный (0.0.0.0:3000)":
+            self.server_host = "0.0.0.0"
+            self.server_port = 3000
+        else:
+            self.server_host = self.host_input.text()
+            self.server_port = int(self.port_input.text())
 
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
         if not ok or not nickname:
             sys.exit()
 
-        # Создаем диалог выбора сервера
-        server_dialog = QDialog(self)
-        server_dialog.setWindowTitle("Выбор сервера")
-        layout = QVBoxLayout()
-        
-        combo = QComboBox()
-        combo.addItems(["0.0.0.0:3000", "smartcontrol.su:3000", "Другой сервер"])
-        layout.addWidget(combo)
-        
-        custom_input = QLineEdit()
-        custom_input.setPlaceholderText("Адрес:порт")
-        custom_input.hide()
-        layout.addWidget(custom_input)
-        
-        def on_combo_changed(text):
-            custom_input.setVisible(text == "Другой сервер")
-        
-        combo.currentTextChanged.connect(on_combo_changed)
-        
-        buttons = QHBoxLayout()
-        ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Отмена")
-        buttons.addWidget(ok_button)
-        buttons.addWidget(cancel_button)
-        layout.addLayout(buttons)
-        
-        server_dialog.setLayout(layout)
-        
-        def on_ok():
-            server_dialog.accept()
-        
-        def on_cancel():
-            server_dialog.reject()
-        
-        ok_button.clicked.connect(on_ok)
-        cancel_button.clicked.connect(on_cancel)
-        
-        if server_dialog.exec_() != QDialog.Accepted:
-            sys.exit()
-            
-        # Получаем выбранный адрес сервера
-        selected = combo.currentText()
-        if selected == "0.0.0.0:3000":
-            server_host, server_port = "0.0.0.0", 3000
-        elif selected == "smartcontrol.su:3000":
-            server_host, server_port = "smartcontrol.su", 3000
-        else:
-            custom_addr = custom_input.text().split(":")
-            if len(custom_addr) != 2:
-                QMessageBox.critical(self, "Ошибка", "Неверный формат адреса")
-                sys.exit()
-            server_host, server_port = custom_addr[0], int(custom_addr[1])
-
         self.client = P2PClient(on_receive_callback=self.display_message,
-                              nickname=nickname,
-                              server_host=server_host,
-                              server_port=server_port)
+<<<<<<< HEAD
+                                nickname=nickname,
+                                server_host=self.server_host,
+                                server_port=self.server_port)
+=======
+                                nickname=nickname)
+>>>>>>> fe4d188e59b35c8096eea608961fbe2ccd1890ae
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames
@@ -249,7 +239,7 @@ class ChatWindow(QMainWindow):
         try:
             if self.client:
                 print("[i] Отключение от сервера...")
-                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+                self.client.sock.sendto('__exit'.encode(), (self.server_host, self.server_port))
                 # Даем серверу время на обработку
                 time.sleep(0.5)
                 self.client.sock.close()

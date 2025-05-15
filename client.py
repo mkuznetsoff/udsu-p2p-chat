@@ -11,7 +11,7 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '192.168.49.149'
 SERVER_PORT = 3000
 
 
@@ -132,16 +132,19 @@ class MessageHistory:
 
 class P2PClient:
 
-    def __init__(self, on_receive_callback, nickname, server_host='0.0.0.0', server_port=3000):
+    def __init__(self, on_receive_callback, nickname):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
         self.nickname = nickname
-        self.crypto = CryptoManager(nickname)
-        self.history = MessageHistory(self.crypto, self.nickname)
+<<<<<<< HEAD
         self.server_host = server_host
         self.server_port = server_port
+=======
+>>>>>>> fe4d188e59b35c8096eea608961fbe2ccd1890ae
+        self.crypto = CryptoManager(nickname)
+        self.history = MessageHistory(self.crypto, self.nickname)
 
     def __del__(self):
         try:
@@ -162,7 +165,7 @@ class P2PClient:
         threading.Thread(target=self.listen, daemon=True).start()
         threading.Thread(target=self.request_contacts_update, daemon=True).start()
         join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
-        self.sock.sendto(join_msg.encode('utf-8'), (self.server_host, self.server_port))
+        self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
 
     def listen(self):
         while True:
@@ -173,7 +176,9 @@ class P2PClient:
                 if msg.startswith('__peer'):
                     _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
                     self.contacts[(ip, int(port))] = (pub_key, nickname)
-                    self.on_receive(f"[+] Обнаружен клиент {nickname}")
+                    # Пробиваем NAT у удалённого клиента
+                    self.sock.sendto(b'__punch', (ip, int(port)))
+                    self.on_receive(f"[+] Обнаружен клиент {nickname}, ip={ip}, port={port}")
                 elif msg.startswith('__leave'):
                     _, ip, port, nickname = msg.split(maxsplit=3)
                     addr = (ip, int(port))
