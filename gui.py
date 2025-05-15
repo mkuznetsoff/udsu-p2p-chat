@@ -95,6 +95,16 @@ class ChatWindow(QMainWindow):
                 sys.exit()
             server_host, server_port = custom_addr[0], int(custom_addr[1])
 
+        self.setStyleSheet(self.load_stylesheet())
+
+        # Основной виджет и компоненты должны быть инициализированы до клиента
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
+        self.chat_display = QTextEdit()
+        self.chat_display.setReadOnly(True)
+        self.chat_display.setObjectName("chatDisplay")
+
         self.client = P2PClient(on_receive_callback=self.display_message,
                               nickname=nickname,
                               server_host=server_host,
