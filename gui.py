@@ -27,7 +27,7 @@ class ExportWorker(QThread):
         finally:
             self.finished.emit()
 from PyQt5.QtGui import QFont, QColor, QPalette
-from client import P2PClient, SERVER_HOST, SERVER_PORT  # Импортируем константы
+from client import P2PClient  # Импортируем P2PClient
 
 class ChatWindow(QMainWindow):
 
@@ -82,9 +82,13 @@ class ChatWindow(QMainWindow):
             sys.exit()
 
         self.client = P2PClient(on_receive_callback=self.display_message,
+<<<<<<< HEAD
                                 nickname=nickname,
                                 server_host=self.server_host,
                                 server_port=self.server_port)
+=======
+                                nickname=nickname)
+>>>>>>> fe4d188e59b35c8096eea608961fbe2ccd1890ae
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames
@@ -235,7 +239,7 @@ class ChatWindow(QMainWindow):
         try:
             if self.client:
                 print("[i] Отключение от сервера...")
-                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
+                self.client.sock.sendto('__exit'.encode(), (self.server_host, self.server_port))
                 # Даем серверу время на обработку
                 time.sleep(0.5)
                 self.client.sock.close()
