@@ -3,7 +3,7 @@ import time
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QTextEdit, QLineEdit, QPushButton, QListWidget,
                              QHBoxLayout, QMessageBox, QLabel, QInputDialog,
-                             QFileDialog, QDialog, QComboBox)
+                             QFileDialog)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 
 class ExportWorker(QThread):
@@ -29,7 +29,6 @@ class ExportWorker(QThread):
 from PyQt5.QtGui import QFont, QColor, QPalette
 from client import P2PClient, SERVER_HOST, SERVER_PORT  # Импортируем константы
 
-
 class ChatWindow(QMainWindow):
 
     def __init__(self):
@@ -42,63 +41,8 @@ class ChatWindow(QMainWindow):
         if not ok or not nickname:
             sys.exit()
 
-        # Создаем диалог выбора сервера
-        server_dialog = QDialog(self)
-        server_dialog.setWindowTitle("Выбор сервера")
-        layout = QVBoxLayout()
-        
-        combo = QComboBox()
-        combo.addItems(["0.0.0.0:3000", "smartcontrol.su:3000", "Другой сервер"])
-        layout.addWidget(combo)
-        
-        custom_input = QLineEdit()
-        custom_input.setPlaceholderText("Адрес:порт")
-        custom_input.hide()
-        layout.addWidget(custom_input)
-        
-        def on_combo_changed(text):
-            custom_input.setVisible(text == "Другой сервер")
-        
-        combo.currentTextChanged.connect(on_combo_changed)
-        
-        buttons = QHBoxLayout()
-        ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Отмена")
-        buttons.addWidget(ok_button)
-        buttons.addWidget(cancel_button)
-        layout.addLayout(buttons)
-        
-        server_dialog.setLayout(layout)
-        
-        def on_ok():
-            server_dialog.accept()
-        
-        def on_cancel():
-            server_dialog.reject()
-        
-        ok_button.clicked.connect(on_ok)
-        cancel_button.clicked.connect(on_cancel)
-        
-        if server_dialog.exec_() != QDialog.Accepted:
-            sys.exit()
-            
-        # Получаем выбранный адрес сервера
-        selected = combo.currentText()
-        if selected == "0.0.0.0:3000":
-            server_host, server_port = "0.0.0.0", 3000
-        elif selected == "smartcontrol.su:3000":
-            server_host, server_port = "smartcontrol.su", 3000
-        else:
-            custom_addr = custom_input.text().split(":")
-            if len(custom_addr) != 2:
-                QMessageBox.critical(self, "Ошибка", "Неверный формат адреса")
-                sys.exit()
-            server_host, server_port = custom_addr[0], int(custom_addr[1])
-
         self.client = P2PClient(on_receive_callback=self.display_message,
-                              nickname=nickname,
-                              server_host=server_host,
-                              server_port=server_port)
+                                nickname=nickname)
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames
@@ -196,16 +140,10 @@ class ChatWindow(QMainWindow):
         text = self.message_input.text().strip()
         if not text or not self.current_contact:
             return
-        try:
-            ip, port = self.current_contact.split(':')
-            print(f"[DEBUG] Отправка сообщения на {ip}:{port}")
-            self.client.send_to(ip, int(port), text)
-            self.display_message(f"<b>Вы → {text}</b>")
-            self.message_input.clear()
-        except Exception as e:
-            print(f"[DEBUG] Ошибка отправки: {e}")
-            print(f"[DEBUG] Текущий сервер: {self.client.server_host}:{self.client.server_port}")
-            self.display_message(f"<span style='color: red'>Ошибка отправки: {e}</span>")
+        ip, port = self.current_contact.split(':')
+        self.client.send_to(ip, int(port), text)
+        self.display_message(f"<b>Вы → {text}</b>")
+        self.message_input.clear()
 
     def get_nickname(self, addr):
         if addr in self.nicknames:
@@ -255,7 +193,7 @@ class ChatWindow(QMainWindow):
         try:
             if self.client:
                 print("[i] Отключение от сервера...")
-                self.client.sock.sendto('__exit'.encode(), (self.client.server_host, self.client.server_port))
+                self.client.sock.sendto('__exit'.encode(), (SERVER_HOST, SERVER_PORT))
                 # Даем серверу время на обработку
                 time.sleep(0.5)
                 self.client.sock.close()

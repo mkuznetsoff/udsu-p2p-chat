@@ -11,6 +11,8 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 3000
 
 
 def clear_screen():
@@ -130,7 +132,7 @@ class MessageHistory:
 
 class P2PClient:
 
-    def __init__(self, on_receive_callback, nickname, server_host='0.0.0.0', server_port=3000):
+    def __init__(self, on_receive_callback, nickname):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
@@ -138,12 +140,10 @@ class P2PClient:
         self.nickname = nickname
         self.crypto = CryptoManager(nickname)
         self.history = MessageHistory(self.crypto, self.nickname)
-        self.server_host = server_host
-        self.server_port = server_port
 
     def __del__(self):
         try:
-            self.sock.sendto('__exit'.encode('utf-8'), (self.server_host, self.server_port))
+            self.sock.sendto('__exit'.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
             self.sock.close()
         except:
             pass
@@ -151,7 +151,7 @@ class P2PClient:
     def request_contacts_update(self):
         while True:
             try:
-                self.sock.sendto(b'__request_keys', (self.server_host, self.server_port))
+                self.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
                 time.sleep(10)  # Обновляем каждые 10 секунд
             except:
                 break
@@ -160,19 +160,19 @@ class P2PClient:
         threading.Thread(target=self.listen, daemon=True).start()
         threading.Thread(target=self.request_contacts_update, daemon=True).start()
         join_msg = f"__join {self.crypto.get_public_key_str()} {self.nickname}"
-        self.sock.sendto(join_msg.encode('utf-8'), (self.server_host, self.server_port))
+        self.sock.sendto(join_msg.encode('utf-8'), (SERVER_HOST, SERVER_PORT))
 
     def listen(self):
         while True:
             try:
-                print("[DEBUG] Ожидание сообщений...")
                 msg, addr = self.sock.recvfrom(UDP_MAX_SIZE)
-                print(f"[DEBUG] Получено сообщение от {addr[0]}:{addr[1]}")
                 msg = msg.decode('utf-8')
 
                 if msg.startswith('__peer'):
                     _, ip, port, pub_key, nickname = msg.split(maxsplit=4)
                     self.contacts[(ip, int(port))] = (pub_key, nickname)
+                    # Пробиваем NAT у удалённого клиента
+                    self.sock.sendto(b'__punch', (ip, int(port)))
                     self.on_receive(f"[+] Обнаружен клиент {nickname}")
                 elif msg.startswith('__leave'):
                     _, ip, port, nickname = msg.split(maxsplit=3)
@@ -225,13 +225,9 @@ class P2PClient:
         try:
             pub_key = self.contacts[addr][0]
             encrypted = self.crypto.encrypt(text, pub_key)
-            # Сначала шифруем, потом кодируем в utf-8
-            message = encrypted.encode('utf-8')
-            print(f"[DEBUG] Отправка сообщения на {ip}:{port}")
-            self.sock.sendto(message, addr)
+            self.sock.sendto(encrypted.encode('utf-8'), addr)
             # Сохраняем отправленное сообщение в историю
-            recipient_nickname = self.contacts[addr][1]
-            self.history.add_message(self.nickname, recipient_nickname, text)
+            self.history.add_message(self.nickname, self.contacts[addr][1], text)
         except Exception as e:
             self.on_receive(
                 f"{Fore.RED}[Ошибка отправки {ip}:{port}]: {e}{Style.RESET_ALL}"
@@ -281,7 +277,7 @@ if __name__ == '__main__':
     def wait_for_contacts(timeout=5):
         print(f"{Fore.YELLOW}Поиск других участников...{Style.RESET_ALL}")
         for i in range(timeout):
-            client.sock.sendto(b'__request_keys', (client.server_host, client.server_port))
+            client.sock.sendto(b'__request_keys', (SERVER_HOST, SERVER_PORT))
             time.sleep(1)
             if client.list_contacts():
                 return True
@@ -348,7 +344,7 @@ if __name__ == '__main__':
                     f"\n{Fore.YELLOW}Обновление списка клиентов...{Style.RESET_ALL}"
                 )
                 client.sock.sendto(b'__request_keys',
-                                   (client.server_host, client.server_port))
+                                   (SERVER_HOST, SERVER_PORT))
                 time.sleep(1)
                 print(f"{Fore.CYAN}Доступные клиенты:{Style.RESET_ALL}")
                 for contact in client.list_contacts():
