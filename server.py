@@ -23,6 +23,10 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
             msg = msg.decode('utf-8')
             current_time = time.time()
             
+            client_ip = addr[0]
+            if client_ip.startswith('192.168.') or client_ip.startswith('10.') or client_ip.startswith('172.'):
+                client_ip = s.getsockname()[0]              
+                
             # Обновляем время последней активности
             if addr in members:
                 last_activity[addr] = current_time
