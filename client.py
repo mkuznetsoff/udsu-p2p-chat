@@ -11,8 +11,6 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
-SERVER_HOST = '192.168.49.149'
-SERVER_PORT = 3000
 
 
 def clear_screen():
@@ -132,12 +130,14 @@ class MessageHistory:
 
 class P2PClient:
 
-    def __init__(self, on_receive_callback, nickname):
+    def __init__(self, on_receive_callback, nickname, server_host='0.0.0.0', server_port=3000):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 0))
         self.contacts = {}  # {(ip, port): (public_key, nickname)}
         self.on_receive = on_receive_callback
         self.nickname = nickname
+        self.server_host = server_host
+        self.server_port = server_port
         self.crypto = CryptoManager(nickname)
         self.history = MessageHistory(self.crypto, self.nickname)
 

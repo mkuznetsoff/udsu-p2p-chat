@@ -35,6 +35,46 @@ class ChatWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UDSU P2P CHAT")
         self.setGeometry(100, 100, 800, 550)
+        
+        # Диалог конфигурации сервера
+        server_dialog = QDialog(self)
+        server_dialog.setWindowTitle("Конфигурация сервера")
+        layout = QVBoxLayout()
+        
+        # Выпадающий список предустановленных серверов
+        self.server_combo = QComboBox()
+        self.server_combo.addItems(["Локальный (0.0.0.0:3000)", "Пользовательский"])
+        layout.addWidget(self.server_combo)
+        
+        # Поля для пользовательского сервера
+        self.host_input = QLineEdit()
+        self.host_input.setPlaceholderText("Адрес сервера")
+        self.port_input = QLineEdit()
+        self.port_input.setPlaceholderText("Порт")
+        self.port_input.setText("3000")
+        
+        custom_layout = QVBoxLayout()
+        custom_layout.addWidget(self.host_input)
+        custom_layout.addWidget(self.port_input)
+        layout.addLayout(custom_layout)
+        
+        # Кнопка подтверждения
+        confirm_button = QPushButton("Подключиться")
+        confirm_button.clicked.connect(server_dialog.accept)
+        layout.addWidget(confirm_button)
+        
+        server_dialog.setLayout(layout)
+        
+        if server_dialog.exec_() != QDialog.Accepted:
+            sys.exit()
+            
+        # Получаем конфигурацию сервера
+        if self.server_combo.currentText() == "Локальный (0.0.0.0:3000)":
+            self.server_host = "0.0.0.0"
+            self.server_port = 3000
+        else:
+            self.server_host = self.host_input.text()
+            self.server_port = int(self.port_input.text())
 
         nickname, ok = QInputDialog.getText(self, 'Ввод ника',
                                             'Введите ваш ник:')
@@ -42,7 +82,9 @@ class ChatWindow(QMainWindow):
             sys.exit()
 
         self.client = P2PClient(on_receive_callback=self.display_message,
-                                nickname=nickname)
+                                nickname=nickname,
+                                server_host=self.server_host,
+                                server_port=self.server_port)
         self.client.start()
         self.current_contact = None
         self.nicknames = {}  # Dictionary to store nicknames
