@@ -23,11 +23,10 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
             msg = msg.decode('utf-8')
             current_time = time.time()
             
-            # Используем адрес, с которого пришел запрос
             client_ip = addr[0]
             if client_ip.startswith('192.168.') or client_ip.startswith('10.') or client_ip.startswith('172.'):
-                client_ip = s.getsockname()[0]  # Используем IP сервера
-            
+                client_ip = s.getsockname()[0]              
+                
             # Обновляем время последней активности
             if addr in members:
                 last_activity[addr] = current_time
@@ -72,7 +71,7 @@ def listen(host: str = '0.0.0.0', port: int = 3000):
                     # Уведомляем всех о новом участнике
                     for member in members:
                         if member != addr:
-                            s.sendto(f"__peer {client_ip} {addr[1]} {public_key} {nickname}".encode(), member)
+                            s.sendto(f"__peer {addr[0]} {addr[1]} {public_key} {nickname}".encode(), member)
                             mem_key, mem_nick = members[member]
                             s.sendto(f"__peer {member[0]} {member[1]} {mem_key} {mem_nick}".encode(), addr)
             
