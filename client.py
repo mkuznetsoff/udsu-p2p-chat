@@ -226,7 +226,6 @@ class P2PClient:
             pub_key = self.contacts[addr][0]
             encrypted = self.crypto.encrypt(text, pub_key)
             self.sock.sendto(encrypted.encode('utf-8'), addr)
-            # Сохраняем отправленное сообщение в историю
             self.history.add_message(self.nickname, self.contacts[addr][1], text)
         except Exception as e:
             self.on_receive(
