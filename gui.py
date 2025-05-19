@@ -85,7 +85,7 @@ class ChatWindow(QMainWindow):
         # Получаем выбранный адрес сервера
         selected = combo.currentText()
         if selected == "0.0.0.0:3000":
-            server_host, server_port = "0.0.0.0", 3000
+            server_host, server_port = "127.0.0.1", 3000
         elif selected == "smartcontrol.su:3000":
             server_host, server_port = "smartcontrol.su", 3000
         else:

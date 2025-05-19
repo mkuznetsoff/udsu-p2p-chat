@@ -11,7 +11,7 @@ import zipfile
 init(autoreset=True)  # Инициализация colorama
 
 UDP_MAX_SIZE = 65535
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '0.0.0.0' if os.name != 'nt' else '127.0.0.1'
 SERVER_PORT = 3000
 
 
