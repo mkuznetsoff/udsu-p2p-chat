@@ -119,7 +119,7 @@ def export_history():
         export_dir = 'exports'
         os.makedirs(export_dir, exist_ok=True)
         filename = client.export_history(export_dir)
-        return jsonify({'success': True, 'file': filename})
+        return send_file(filename, as_attachment=True)
     except Exception as e:
         print(f"Export error: {e}")
         return jsonify({'success': False})

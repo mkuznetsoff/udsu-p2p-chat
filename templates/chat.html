@@ -95,14 +95,18 @@
 
         function exportHistory() {
             fetch('/export', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('История успешно экспортирована');
-                    } else {
-                        alert('Ошибка при экспорте истории');
-                    }
-                });
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `chat_history_${new Date().toISOString().slice(0,10)}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(() => alert('Ошибка при экспорте истории'));
         }
 
         function importHistory() {
