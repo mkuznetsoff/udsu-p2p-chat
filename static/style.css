@@ -61,11 +61,11 @@ body {
 .chat-container {
     display: flex;
     gap: 20px;
-    height: 100vh;
+    height: 95vh;
     width: 100%;
     padding: 20px;
     box-sizing: border-box;
-    margin: 0;
+    margin: 20px 0;
 }
 
 .contacts-panel {

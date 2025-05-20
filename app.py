@@ -16,10 +16,12 @@ def login():
 
 @app.route('/login', methods=["POST"])
 def handle_login():
-    nickname = request.form.get("nickname")
-    server_choice = request.form.get("serverChoice")
-    
-    if nickname:
+    try:
+        nickname = request.form.get("nickname")
+        server_choice = request.form.get("serverChoice")
+        
+        if not nickname:
+            return "Никнейм обязателен", 400
         if server_choice == "local":
             server_host, server_port = "127.0.0.1", 3000
         elif server_choice == "smart":
