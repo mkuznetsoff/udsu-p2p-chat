@@ -1,34 +1,28 @@
 
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>P2P Chat - Вход</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>UDSU P2P CHAT - Вход</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="login-container">
-        <h1>P2P Chat</h1>
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Введите ваш ник" required>
-            <div class="server-select">
-                <select name="serverChoice" id="serverChoice" onchange="toggleCustomServer()">
-                    <option value="local">0.0.0.0:3000</option>
-                    <option value="smart">smartcontrol.su:3000</option>
-                    <option value="custom">Другой сервер</option>
-                </select>
-                <div id="customServer">
-                    <input type="text" name="customServerAddress" placeholder="Адрес:порт">
-                </div>
-            </div>
+        <h1>UDSU P2P CHAT</h1>
+        <form action="{{ url_for('handle_login') }}" method="POST">
+            <input type="text" name="nickname" placeholder="Введите ваш ник" required>
+            <select name="serverChoice" onchange="toggleCustomServer(this.value)">
+                <option value="local">Локальный (127.0.0.1:3000)</option>
+                <option value="smart">Smartcontrol.su:3000</option>
+                <option value="custom">Другой сервер</option>
+            </select>
+            <input type="text" name="customServer" id="customServer" placeholder="адрес:порт" style="display:none">
             <button type="submit">Войти</button>
         </form>
     </div>
     <script>
-        function toggleCustomServer() {
-            const choice = document.getElementById('serverChoice').value;
-            const customServer = document.getElementById('customServer');
-            customServer.style.display = choice === 'custom' ? 'block' : 'none';
+        function toggleCustomServer(value) {
+            document.getElementById('customServer').style.display = 
+                value === 'custom' ? 'block' : 'none';
         }
     </script>
 </body>
